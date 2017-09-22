@@ -1,4 +1,4 @@
-version: build-{build}
+version: bunny-{build}
 branches:
   only:
   - dev
@@ -44,18 +44,3 @@ test_script:
       dotnet test test/Discord.Net.Tests/Discord.Net.Tests.csproj -c "Release" --no-build /p:BuildNumber="$Env:BUILD" /p:IsTagBuild="$Env:APPVEYOR_REPO_TAG"
     }
 
-deploy:
-- provider: NuGet
-  server: https://www.myget.org/F/discord-net/api/v2/package
-  api_key:
-    secure: Jl7BXeUjRnkVHDMBuUWSXcEOkrli1PBleW2IiLyUs5j63UNUNp1hcjaUJRujx9lz
-  symbol_server: https://www.myget.org/F/discord-net/symbols/api/v2/package
-  on:
-    branch: dev
-- provider: NuGet
-  server: https://www.myget.org/F/rogueexception/api/v2/package
-  api_key:
-    secure: D+vW2O2LBf/iJb4f+q8fkyIW2VdIYIGxSYLWNrOD4BHlDBZQlJipDbNarWjUr2Kn
-  symbol_server: https://www.myget.org/F/rogueexception/symbols/api/v2/package
-  on:
-    branch: dev
