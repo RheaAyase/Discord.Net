@@ -102,6 +102,7 @@ namespace Discord.Rest
             RequestOptions options)
         {
             await client.ApiClient.DeleteGuildAsync(guild.Id, options).ConfigureAwait(false);
+            guild.Deleted = true;
         }
 
         //Bans

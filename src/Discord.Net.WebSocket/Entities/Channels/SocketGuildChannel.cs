@@ -17,6 +17,7 @@ namespace Discord.WebSocket
         public SocketGuild Guild { get; }
         public string Name { get; private set; }
         public int Position { get; private set; }
+        public bool Deleted{ get; set; }
 
         public IReadOnlyCollection<Overwrite> PermissionOverwrites => _overwrites;
         public new virtual IReadOnlyCollection<SocketGuildUser> Users => ImmutableArray.Create<SocketGuildUser>();

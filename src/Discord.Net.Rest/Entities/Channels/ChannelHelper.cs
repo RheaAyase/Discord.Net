@@ -13,13 +13,16 @@ namespace Discord.Rest
     internal static class ChannelHelper
     {
         //General
-        public static async Task DeleteAsync(IChannel channel, BaseDiscordClient client, 
+        public static async Task DeleteAsync(IChannel channel, BaseDiscordClient client,
             RequestOptions options)
-        { 
+        {
             await client.ApiClient.DeleteChannelAsync(channel.Id, options).ConfigureAwait(false);
+            IDeletable del = channel as IDeletable;
+            if( del != null )
+                del.Deleted = true;
         }
-        public static async Task<Model> ModifyAsync(IGuildChannel channel, BaseDiscordClient client, 
-            Action<GuildChannelProperties> func, 
+        public static async Task<Model> ModifyAsync(IGuildChannel channel, BaseDiscordClient client,
+            Action<GuildChannelProperties> func,
             RequestOptions options)
         {
             var args = new GuildChannelProperties();
@@ -31,8 +34,8 @@ namespace Discord.Rest
             };
             return await client.ApiClient.ModifyGuildChannelAsync(channel.Id, apiArgs, options).ConfigureAwait(false);
         }
-        public static async Task<Model> ModifyAsync(ITextChannel channel, BaseDiscordClient client, 
-            Action<TextChannelProperties> func, 
+        public static async Task<Model> ModifyAsync(ITextChannel channel, BaseDiscordClient client,
+            Action<TextChannelProperties> func,
             RequestOptions options)
         {
             var args = new TextChannelProperties();
@@ -46,8 +49,8 @@ namespace Discord.Rest
             };
             return await client.ApiClient.ModifyGuildChannelAsync(channel.Id, apiArgs, options).ConfigureAwait(false);
         }
-        public static async Task<Model> ModifyAsync(IVoiceChannel channel, BaseDiscordClient client, 
-            Action<VoiceChannelProperties> func, 
+        public static async Task<Model> ModifyAsync(IVoiceChannel channel, BaseDiscordClient client,
+            Action<VoiceChannelProperties> func,
             RequestOptions options)
         {
             var args = new VoiceChannelProperties();
@@ -86,7 +89,7 @@ namespace Discord.Rest
         }
 
         //Messages
-        public static async Task<RestMessage> GetMessageAsync(IMessageChannel channel, BaseDiscordClient client, 
+        public static async Task<RestMessage> GetMessageAsync(IMessageChannel channel, BaseDiscordClient client,
             ulong id, RequestOptions options)
         {
             var guildId = (channel as IGuildChannel)?.GuildId;
@@ -97,7 +100,7 @@ namespace Discord.Rest
             var author = GetAuthor(client, guild, model.Author.Value, model.WebhookId.ToNullable());
             return RestMessage.Create(client, channel, author, model);
         }
-        public static IAsyncEnumerable<IReadOnlyCollection<RestMessage>> GetMessagesAsync(IMessageChannel channel, BaseDiscordClient client, 
+        public static IAsyncEnumerable<IReadOnlyCollection<RestMessage>> GetMessagesAsync(IMessageChannel channel, BaseDiscordClient client,
             ulong? fromMessageId, Direction dir, int limit, RequestOptions options)
         {
             if (dir == Direction.Around)
@@ -123,7 +126,7 @@ namespace Discord.Rest
                     foreach (var model in models)
                     {
                         var author = GetAuthor(client, guild, model.Author.Value, model.WebhookId.ToNullable());
-                        builder.Add(RestMessage.Create(client, channel, author, model));                        
+                        builder.Add(RestMessage.Create(client, channel, author, model));
                     }
                     return builder.ToImmutable();
                 },
@@ -179,7 +182,7 @@ namespace Discord.Rest
             var args = new UploadFileParams(stream) { Filename = filename, Content = text, IsTTS = isTTS };
             var model = await client.ApiClient.UploadFileAsync(channel.Id, args, options).ConfigureAwait(false);
             return RestUserMessage.Create(client, channel, client.CurrentUser, model);
-        }     
+        }
 
         public static async Task DeleteMessagesAsync(ITextChannel channel, BaseDiscordClient client,
             IEnumerable<ulong> messageIds, RequestOptions options)
@@ -276,7 +279,7 @@ namespace Discord.Rest
         {
             await client.ApiClient.TriggerTypingIndicatorAsync(channel.Id, options).ConfigureAwait(false);
         }
-        public static IDisposable EnterTypingState(IMessageChannel channel, BaseDiscordClient client, 
+        public static IDisposable EnterTypingState(IMessageChannel channel, BaseDiscordClient client,
             RequestOptions options)
             => new TypingNotifier(client, channel, options);
 

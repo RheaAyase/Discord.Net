@@ -18,6 +18,7 @@ namespace Discord.Rest
         public int Position { get; private set; }
 
         public DateTimeOffset CreatedAt => SnowflakeUtils.FromSnowflake(Id);
+        public bool Deleted{ get; set; }
         public bool IsEveryone => Id == Guild.Id;
         public string Mention => IsEveryone ? "@everyone" : MentionUtils.MentionRole(Id);
 
@@ -44,7 +45,7 @@ namespace Discord.Rest
         }
 
         public async Task ModifyAsync(Action<RoleProperties> func, RequestOptions options = null)
-        { 
+        {
             var model = await RoleHelper.ModifyAsync(this, Discord, func, options).ConfigureAwait(false);
             Update(model);
         }

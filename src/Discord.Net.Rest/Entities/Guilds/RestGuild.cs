@@ -23,7 +23,7 @@ namespace Discord.Rest
         public VerificationLevel VerificationLevel { get; private set; }
         public MfaLevel MfaLevel { get; private set; }
         public DefaultMessageNotifications DefaultMessageNotifications { get; private set; }
-        
+
         public ulong? AFKChannelId { get; private set; }
         public ulong? EmbedChannelId { get; private set; }
         public ulong? SystemChannelId { get; private set; }
@@ -34,6 +34,7 @@ namespace Discord.Rest
         internal bool Available { get; private set; }
 
         public DateTimeOffset CreatedAt => SnowflakeUtils.FromSnowflake(Id);
+        public bool Deleted{ get; set; }
 
         [Obsolete("DefaultChannelId is deprecated, use GetDefaultChannelAsync")]
         public ulong DefaultChannelId => Id;
@@ -114,7 +115,7 @@ namespace Discord.Rest
             Update(model);
         }
         public async Task ModifyEmbedAsync(Action<GuildEmbedProperties> func, RequestOptions options = null)
-        { 
+        {
             var model = await GuildHelper.ModifyEmbedAsync(this, Discord, func, options).ConfigureAwait(false);
             Update(model);
         }
@@ -155,7 +156,7 @@ namespace Discord.Rest
         public Task<IReadOnlyCollection<RestGuildChannel>> GetChannelsAsync(RequestOptions options = null)
             => GuildHelper.GetChannelsAsync(this, Discord, options);
         public Task<RestGuildChannel> GetChannelAsync(ulong id, RequestOptions options = null)
-            => GuildHelper.GetChannelAsync(this, Discord, id, options);            
+            => GuildHelper.GetChannelAsync(this, Discord, id, options);
         public async Task<RestTextChannel> GetTextChannelAsync(ulong id, RequestOptions options = null)
         {
             var channel = await GuildHelper.GetChannelAsync(this, Discord, id, options).ConfigureAwait(false);
@@ -199,7 +200,7 @@ namespace Discord.Rest
         public async Task<RestGuildChannel> GetEmbedChannelAsync(RequestOptions options = null)
         {
             var embedId = EmbedChannelId;
-            if (embedId.HasValue) 
+            if (embedId.HasValue)
                 return await GuildHelper.GetChannelAsync(this, Discord, embedId.Value, options).ConfigureAwait(false);
             return null;
         }
@@ -236,7 +237,7 @@ namespace Discord.Rest
             return null;
         }
 
-        public async Task<RestRole> CreateRoleAsync(string name, GuildPermissions? permissions = default(GuildPermissions?), Color? color = default(Color?), 
+        public async Task<RestRole> CreateRoleAsync(string name, GuildPermissions? permissions = default(GuildPermissions?), Color? color = default(Color?),
             bool isHoisted = false, RequestOptions options = null)
         {
             var role = await GuildHelper.CreateRoleAsync(this, Discord, name, permissions, color, isHoisted, options).ConfigureAwait(false);
@@ -352,7 +353,7 @@ namespace Discord.Rest
         async Task<IReadOnlyCollection<IInviteMetadata>> IGuild.GetInvitesAsync(RequestOptions options)
             => await GetInvitesAsync(options).ConfigureAwait(false);
 
-        IRole IGuild.GetRole(ulong id) 
+        IRole IGuild.GetRole(ulong id)
             => GetRole(id);
         async Task<IRole> IGuild.CreateRoleAsync(string name, GuildPermissions? permissions, Color? color, bool isHoisted, RequestOptions options)
             => await CreateRoleAsync(name, permissions, color, isHoisted, options).ConfigureAwait(false);

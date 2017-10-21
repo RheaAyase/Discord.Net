@@ -11,7 +11,7 @@ namespace Discord.WebSocket
     public abstract class SocketMessage : SocketEntity<ulong>, IMessage
     {
         private long _timestampTicks;
-        
+
         public SocketUser Author { get; }
         public ISocketMessageChannel Channel { get; }
         public MessageSource Source { get; }
@@ -19,6 +19,7 @@ namespace Discord.WebSocket
         public string Content { get; private set; }
 
         public DateTimeOffset CreatedAt => SnowflakeUtils.FromSnowflake(Id);
+        public bool Deleted{ get; set; }
         public virtual bool IsTTS => false;
         public virtual bool IsPinned => false;
         public virtual DateTimeOffset? EditedTimestamp => null;

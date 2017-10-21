@@ -17,6 +17,7 @@ namespace Discord.Rest
 
         public string Code => Id;
         public string Url => $"{DiscordConfig.InviteUrl}{Code}";
+        public bool Deleted{ get; set; }
 
         internal RestInvite(BaseDiscordClient discord, IGuild guild, IChannel channel, string id)
             : base(discord, id)
@@ -37,7 +38,7 @@ namespace Discord.Rest
             GuildName = model.Guild.Name;
             ChannelName = model.Channel.Name;
         }
-        
+
         public async Task UpdateAsync(RequestOptions options = null)
         {
             var model = await Discord.ApiClient.GetInviteAsync(Code, options).ConfigureAwait(false);
@@ -51,7 +52,7 @@ namespace Discord.Rest
 
         public override string ToString() => Url;
         private string DebuggerDisplay => $"{Url} ({GuildName} / {ChannelName})";
-        
+
         IGuild IInvite.Guild
         {
             get

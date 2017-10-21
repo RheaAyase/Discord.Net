@@ -19,7 +19,7 @@ namespace Discord
         DateTimeOffset Timestamp { get; }
         /// <summary> Gets the time of this message's last edit, if any. </summary>
         DateTimeOffset? EditedTimestamp { get; }
-        
+
         /// <summary> Gets the channel this message was sent to. </summary>
         IMessageChannel Channel { get; }
         /// <summary> Gets the author of this message. </summary>

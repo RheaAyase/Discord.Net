@@ -54,6 +54,7 @@ namespace Discord.WebSocket
         public string VoiceRegionId { get; private set; }
         public string IconId { get; private set; }
         public string SplashId { get; private set; }
+        public bool Deleted{ get; set; }
 
         public DateTimeOffset CreatedAt => SnowflakeUtils.FromSnowflake(Id);
         public string IconUrl => CDN.GetGuildIconUrl(Id, IconId);
@@ -75,7 +76,7 @@ namespace Discord.WebSocket
                 return id.HasValue ? GetVoiceChannel(id.Value) : null;
             }
         }
-        public SocketGuildChannel EmbedChannel 
+        public SocketGuildChannel EmbedChannel
         {
             get
             {
@@ -348,7 +349,7 @@ namespace Discord.WebSocket
                 return value;
             return null;
         }
-        public Task<RestRole> CreateRoleAsync(string name, GuildPermissions? permissions = default(GuildPermissions?), Color? color = default(Color?), 
+        public Task<RestRole> CreateRoleAsync(string name, GuildPermissions? permissions = default(GuildPermissions?), Color? color = default(Color?),
             bool isHoisted = false, RequestOptions options = null)
             => GuildHelper.CreateRoleAsync(this, Discord, name, permissions, color, isHoisted, options);
         internal SocketRole AddRole(RoleModel model)
@@ -578,7 +579,7 @@ namespace Discord.WebSocket
             try
             {
                 await RepopulateAudioStreamsAsync().ConfigureAwait(false);
-                await _audioClient.StartAsync(url, Discord.CurrentUser.Id, voiceState.VoiceSessionId, token).ConfigureAwait(false);                
+                await _audioClient.StartAsync(url, Discord.CurrentUser.Id, voiceState.VoiceSessionId, token).ConfigureAwait(false);
             }
             catch (OperationCanceledException)
             {

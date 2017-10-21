@@ -26,6 +26,7 @@ namespace Discord.Rest
             RequestOptions options)
         {
             await client.ApiClient.DeleteMessageAsync(msg.Channel.Id, msg.Id, options).ConfigureAwait(false);
+            msg.Deleted = true;
         }
 
         public static async Task AddReactionAsync(IMessage msg, IEmote emote, BaseDiscordClient client, RequestOptions options)
@@ -66,7 +67,7 @@ namespace Discord.Rest
         public static ImmutableArray<ITag> ParseTags(string text, IMessageChannel channel, IGuild guild, IReadOnlyCollection<IUser> userMentions)
         {
             var tags = ImmutableArray.CreateBuilder<ITag>();
-            
+
             int index = 0;
             while (true)
             {

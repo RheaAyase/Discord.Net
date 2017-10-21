@@ -1,6 +1,6 @@
 ﻿using Discord.Rest;
 using System;
-using System.Collections.Generic;  
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
@@ -22,9 +22,10 @@ namespace Discord.WebSocket
         public int Position { get; private set; }
 
         public DateTimeOffset CreatedAt => SnowflakeUtils.FromSnowflake(Id);
+        public bool Deleted{ get; set; }
         public bool IsEveryone => Id == Guild.Id;
         public string Mention => IsEveryone ? "@everyone" : MentionUtils.MentionRole(Id);
-        public IEnumerable<SocketGuildUser> Members 
+        public IEnumerable<SocketGuildUser> Members
             => Guild.Users.Where(x => x.Roles.Any(r => r.Id == Id));
 
         internal SocketRole(SocketGuild guild, ulong id)

@@ -10,6 +10,7 @@ namespace Discord.Rpc
     {
         public ulong GuildId { get; }
         public int Position { get; private set; }
+        public bool Deleted{ get; set; }
 
         internal RpcGuildChannel(DiscordRpcClient discord, ulong id, ulong guildId)
             : base(discord, id)

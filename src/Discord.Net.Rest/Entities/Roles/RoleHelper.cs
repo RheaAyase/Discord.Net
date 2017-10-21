@@ -12,8 +12,9 @@ namespace Discord.Rest
             RequestOptions options)
         {
             await client.ApiClient.DeleteGuildRoleAsync(role.Guild.Id, role.Id, options).ConfigureAwait(false);
+            role.Deleted = true;
         }
-        public static async Task<Model> ModifyAsync(IRole role, BaseDiscordClient client, 
+        public static async Task<Model> ModifyAsync(IRole role, BaseDiscordClient client,
             Action<RoleProperties> func, RequestOptions options)
         {
             var args = new RoleProperties();
