@@ -17,7 +17,7 @@
         <VersionSuffix Condition=" '$(VersionSuffix)' != '' ">$(VersionSuffix)-$(BuildNumber)</VersionSuffix>
         <VersionSuffix Condition=" '$(VersionSuffix)' == '' ">build-$(BuildNumber)</VersionSuffix>
     </PropertyGroup>
-    <PropertyGroup Condition=" '$(TargetFramework)' == 'netstandard1.3' Or '$(TargetFramework)' == 'net45' ">
+    <PropertyGroup Condition=" '$(TargetFramework)' == 'netstandard1.3' ">
         <DefineConstants>$(DefineConstants);FILESYSTEM;DEFAULTUDPCLIENT;DEFAULTWEBSOCKET</DefineConstants>
     </PropertyGroup>
     <PropertyGroup Condition=" '$(TargetFramework)' == 'netstandard1.3' ">
