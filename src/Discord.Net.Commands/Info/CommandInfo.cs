@@ -18,6 +18,7 @@ namespace Discord.Commands
         private static readonly System.Reflection.MethodInfo _convertParamsMethod = typeof(CommandInfo).GetTypeInfo().GetDeclaredMethod(nameof(ConvertParamsList));
         private static readonly ConcurrentDictionary<Type, Func<IEnumerable<object>, object>> _arrayConverters = new ConcurrentDictionary<Type, Func<IEnumerable<object>, object>>();
 
+        private readonly CommandService _commandService;
         private readonly Func<ICommandContext, object[], IServiceProvider, CommandInfo, Task> _action;
 
         public ModuleInfo Module { get; }
@@ -26,6 +27,7 @@ namespace Discord.Commands
         public string Remarks { get; }
         public int Priority { get; }
         public bool HasVarArgs { get; }
+        public bool IgnoreExtraArgs { get; }
         public RunMode RunMode { get; }
 
         public IReadOnlyList<string> Aliases { get; }
@@ -62,8 +64,10 @@ namespace Discord.Commands
 
             Parameters = builder.Parameters.Select(x => x.Build(this)).ToImmutableArray();
             HasVarArgs = builder.Parameters.Count > 0 ? builder.Parameters[builder.Parameters.Count - 1].IsMultiple : false;
+            IgnoreExtraArgs = builder.IgnoreExtraArgs;
 
             _action = builder.Callback;
+            _commandService = service;
         }
 
         public async Task<PreconditionResult> CheckPreconditionsAsync(ICommandContext context, IServiceProvider services = null)
@@ -78,7 +82,7 @@ namespace Discord.Commands
                     {
                         foreach (PreconditionAttribute precondition in preconditionGroup)
                         {
-                            var result = await precondition.CheckPermissions(context, this, services).ConfigureAwait(false);
+                            var result = await precondition.CheckPermissionsAsync(context, this, services).ConfigureAwait(false);
                             if (!result.IsSuccess)
                                 return result;
                         }
@@ -87,7 +91,7 @@ namespace Discord.Commands
                     {
                         var results = new List<PreconditionResult>();
                         foreach (PreconditionAttribute precondition in preconditionGroup)
-                            results.Add(await precondition.CheckPermissions(context, this, services).ConfigureAwait(false));
+                            results.Add(await precondition.CheckPermissionsAsync(context, this, services).ConfigureAwait(false));
 
                         if (!results.Any(p => p.IsSuccess))
                             return PreconditionGroupResult.FromError($"{type} precondition group {preconditionGroup.Key} failed.", results);
@@ -117,7 +121,7 @@ namespace Discord.Commands
                 return ParseResult.FromError(preconditionResult);
 
             string input = searchResult.Text.Substring(startIndex);
-            return await CommandParser.ParseArgs(this, context, services, input, 0).ConfigureAwait(false);
+            return await CommandParser.ParseArgsAsync(this, context, services, input, 0).ConfigureAwait(false);
         }
 
         public Task<IResult> ExecuteAsync(ICommandContext context, ParseResult parseResult, IServiceProvider services)
@@ -163,11 +167,11 @@ namespace Discord.Commands
                 switch (RunMode)
                 {
                     case RunMode.Sync: //Always sync
-                        return await ExecuteAsyncInternal(context, args, services).ConfigureAwait(false);
+                        return await ExecuteInternalAsync(context, args, services).ConfigureAwait(false);
                     case RunMode.Async: //Always async
                         var t2 = Task.Run(async () =>
                         {
-                            await ExecuteAsyncInternal(context, args, services).ConfigureAwait(false);
+                            await ExecuteInternalAsync(context, args, services).ConfigureAwait(false);
                         });
                         break;
                 }
@@ -179,7 +183,7 @@ namespace Discord.Commands
             }
         }
 
-        private async Task<IResult> ExecuteAsyncInternal(ICommandContext context, object[] args, IServiceProvider services)
+        private async Task<IResult> ExecuteInternalAsync(ICommandContext context, object[] args, IServiceProvider services)
         {
             await Module.Service._cmdLogger.DebugAsync($"Executing {GetLogText(context)}").ConfigureAwait(false);
             try
@@ -199,10 +203,13 @@ namespace Discord.Commands
                     return result;
                 }
                 else
+                {
                     await task.ConfigureAwait(false);
+                    var result = ExecuteResult.FromSuccess();
+                    await Module.Service._commandExecutedEvent.InvokeAsync(this, context, result).ConfigureAwait(false);
+                }
 
                 var executeResult = ExecuteResult.FromSuccess();
-                await Module.Service._commandExecutedEvent.InvokeAsync(this, context, executeResult).ConfigureAwait(false);
                 return executeResult;
             }
             catch (Exception ex)

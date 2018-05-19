@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using Discord.API;
@@ -13,7 +13,7 @@ namespace Discord.WebSocket
         /// <summary> Gets the estimated round-trip latency, in milliseconds, to the gateway server. </summary>
         public abstract int Latency { get; protected set; }
         public abstract UserStatus Status { get; protected set; } 
-        public abstract Game? Game { get; protected set; }
+        public abstract IActivity Activity { get; protected set; }
 
         internal new DiscordSocketApiClient ApiClient => base.ApiClient as DiscordSocketApiClient;
 
@@ -44,7 +44,8 @@ namespace Discord.WebSocket
         /// <inheritdoc />
         public abstract Task StopAsync();
         public abstract Task SetStatusAsync(UserStatus status);
-        public abstract Task SetGameAsync(string name, string streamUrl = null, StreamType streamType = StreamType.NotStreaming);
+        public abstract Task SetGameAsync(string name, string streamUrl = null, ActivityType type = ActivityType.Playing);
+        public abstract Task SetActivityAsync(IActivity activity);
         public abstract Task DownloadUsersAsync(IEnumerable<IGuild> guilds);  
 
         /// <inheritdoc />
@@ -54,8 +55,8 @@ namespace Discord.WebSocket
         public Task<IReadOnlyCollection<RestConnection>> GetConnectionsAsync(RequestOptions options = null)
             => ClientHelper.GetConnectionsAsync(this, options ?? RequestOptions.Default);
         /// <inheritdoc />
-        public Task<RestInvite> GetInviteAsync(string inviteId, RequestOptions options = null)
-            => ClientHelper.GetInviteAsync(this, inviteId, options ?? RequestOptions.Default);
+        public Task<RestInviteMetadata> GetInviteAsync(string inviteId, bool withCount = false, RequestOptions options = null)
+            => ClientHelper.GetInviteAsync(this, inviteId, withCount, options ?? RequestOptions.Default);
         
         // IDiscordClient
         async Task<IApplication> IDiscordClient.GetApplicationInfoAsync(RequestOptions options)
@@ -69,8 +70,8 @@ namespace Discord.WebSocket
         async Task<IReadOnlyCollection<IConnection>> IDiscordClient.GetConnectionsAsync(RequestOptions options)
             => await GetConnectionsAsync(options).ConfigureAwait(false);
 
-        async Task<IInvite> IDiscordClient.GetInviteAsync(string inviteId, RequestOptions options)
-            => await GetInviteAsync(inviteId, options).ConfigureAwait(false);
+        async Task<IInvite> IDiscordClient.GetInviteAsync(string inviteId, bool withCount, RequestOptions options)
+            => await GetInviteAsync(inviteId, withCount, options).ConfigureAwait(false);
 
         Task<IGuild> IDiscordClient.GetGuildAsync(ulong id, CacheMode mode, RequestOptions options)
             => Task.FromResult<IGuild>(GetGuild(id));

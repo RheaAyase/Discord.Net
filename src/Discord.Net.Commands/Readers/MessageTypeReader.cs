@@ -1,13 +1,13 @@
-﻿using System;
+using System;
 using System.Globalization;
 using System.Threading.Tasks;
 
 namespace Discord.Commands
 {
-    internal class MessageTypeReader<T> : TypeReader
+    public class MessageTypeReader<T> : TypeReader
         where T : class, IMessage
     {
-        public override async Task<TypeReaderResult> Read(ICommandContext context, string input, IServiceProvider services)
+        public override async Task<TypeReaderResult> ReadAsync(ICommandContext context, string input, IServiceProvider services)
         {
             ulong id;
 

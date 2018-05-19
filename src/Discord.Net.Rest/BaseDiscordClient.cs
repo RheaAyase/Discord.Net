@@ -1,4 +1,4 @@
-﻿using Discord.Logging;
+using Discord.Logging;
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -125,6 +125,10 @@ namespace Discord.Rest
         /// <inheritdoc />
         public void Dispose() => Dispose(true);
 
+        /// <inheritdoc />
+        public Task<int> GetRecommendedShardCountAsync(RequestOptions options = null)
+            => ClientHelper.GetRecommendShardCountAsync(this, options);
+
         //IDiscordClient
         ConnectionState IDiscordClient.ConnectionState => ConnectionState.Disconnected;
         ISelfUser IDiscordClient.CurrentUser => CurrentUser;
@@ -144,7 +148,7 @@ namespace Discord.Rest
         Task<IReadOnlyCollection<IConnection>> IDiscordClient.GetConnectionsAsync(RequestOptions options)
             => Task.FromResult<IReadOnlyCollection<IConnection>>(ImmutableArray.Create<IConnection>());
 
-        Task<IInvite> IDiscordClient.GetInviteAsync(string inviteId, RequestOptions options)
+        Task<IInvite> IDiscordClient.GetInviteAsync(string inviteId, bool withCount, RequestOptions options)
             => Task.FromResult<IInvite>(null);
 
         Task<IGuild> IDiscordClient.GetGuildAsync(ulong id, CacheMode mode, RequestOptions options)
@@ -163,6 +167,9 @@ namespace Discord.Rest
             => Task.FromResult<IReadOnlyCollection<IVoiceRegion>>(ImmutableArray.Create<IVoiceRegion>());
         Task<IVoiceRegion> IDiscordClient.GetVoiceRegionAsync(string id, RequestOptions options)
             => Task.FromResult<IVoiceRegion>(null);
+
+        Task<IWebhook> IDiscordClient.GetWebhookAsync(ulong id, RequestOptions options)
+            => Task.FromResult<IWebhook>(null);
 
         Task IDiscordClient.StartAsync()
             => Task.Delay(0);

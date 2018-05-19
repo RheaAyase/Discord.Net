@@ -18,6 +18,9 @@ namespace Discord.WebSocket
         public string Name { get; private set; }
         public int Position { get; private set; }
         public bool Deleted{ get; set; }
+        public ulong? CategoryId { get; private set; }
+        public ICategoryChannel Category 
+            => CategoryId.HasValue ? Guild.GetChannel(CategoryId.Value) as ICategoryChannel : null;
 
         public IReadOnlyCollection<Overwrite> PermissionOverwrites => _overwrites;
         public new virtual IReadOnlyCollection<SocketGuildUser> Users => ImmutableArray.Create<SocketGuildUser>();
@@ -35,6 +38,8 @@ namespace Discord.WebSocket
                     return SocketTextChannel.Create(guild, state, model);
                 case ChannelType.Voice:
                     return SocketVoiceChannel.Create(guild, state, model);
+                case ChannelType.Category:
+                    return SocketCategoryChannel.Create(guild, state, model);
                 default:
                     // TODO: Proper implementation for channel categories
                     return new SocketGuildChannel(guild.Discord, model.Id, guild);
@@ -44,6 +49,7 @@ namespace Discord.WebSocket
         {
             Name = model.Name.Value;
             Position = model.Position.Value;
+            CategoryId = model.CategoryId;
 
             var overwrites = model.PermissionOverwrites.Value;
             var newOverwrites = ImmutableArray.CreateBuilder<Overwrite>(overwrites.Length);
@@ -114,7 +120,7 @@ namespace Discord.WebSocket
 
         public async Task<IReadOnlyCollection<RestInviteMetadata>> GetInvitesAsync(RequestOptions options = null)
             => await ChannelHelper.GetInvitesAsync(this, Discord, options).ConfigureAwait(false);
-        public async Task<RestInviteMetadata> CreateInviteAsync(int? maxAge = 3600, int? maxUses = null, bool isTemporary = false, bool isUnique = false, RequestOptions options = null)
+        public async Task<RestInviteMetadata> CreateInviteAsync(int? maxAge = 86400, int? maxUses = null, bool isTemporary = false, bool isUnique = false, RequestOptions options = null)
             => await ChannelHelper.CreateInviteAsync(this, Discord, maxAge, maxUses, isTemporary, isUnique, options).ConfigureAwait(false);
 
         public new virtual SocketGuildUser GetUser(ulong id) => null;
@@ -129,6 +135,9 @@ namespace Discord.WebSocket
         //IGuildChannel
         IGuild IGuildChannel.Guild => Guild;
         ulong IGuildChannel.GuildId => Guild.Id;
+
+        Task<ICategoryChannel> IGuildChannel.GetCategoryAsync()
+            => Task.FromResult(Category);
 
         async Task<IReadOnlyCollection<IInviteMetadata>> IGuildChannel.GetInvitesAsync(RequestOptions options)
             => await GetInvitesAsync(options).ConfigureAwait(false);
@@ -155,8 +164,8 @@ namespace Discord.WebSocket
 
         //IChannel
         IAsyncEnumerable<IReadOnlyCollection<IUser>> IChannel.GetUsersAsync(CacheMode mode, RequestOptions options)
-            => ImmutableArray.Create<IReadOnlyCollection<IUser>>(Users).ToAsyncEnumerable(); //Overriden in Text/Voice
+            => ImmutableArray.Create<IReadOnlyCollection<IUser>>(Users).ToAsyncEnumerable(); //Overridden in Text/Voice
         Task<IUser> IChannel.GetUserAsync(ulong id, CacheMode mode, RequestOptions options)
-            => Task.FromResult<IUser>(GetUser(id)); //Overriden in Text/Voice
+            => Task.FromResult<IUser>(GetUser(id)); //Overridden in Text/Voice
     }
 }

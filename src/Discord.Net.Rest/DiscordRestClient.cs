@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
 using System.Threading.Tasks;
@@ -56,8 +56,8 @@ namespace Discord.Rest
             => ClientHelper.GetConnectionsAsync(this, options);
 
         /// <inheritdoc />
-        public Task<RestInvite> GetInviteAsync(string inviteId, RequestOptions options = null)
-            => ClientHelper.GetInviteAsync(this, inviteId, options);
+        public Task<RestInviteMetadata> GetInviteAsync(string inviteId, bool withCount = false, RequestOptions options = null)
+            => ClientHelper.GetInviteAsync(this, inviteId, withCount, options);
 
         /// <inheritdoc />
         public Task<RestGuild> GetGuildAsync(ulong id, RequestOptions options = null)
@@ -91,6 +91,9 @@ namespace Discord.Rest
         /// <inheritdoc />
         public Task<RestVoiceRegion> GetVoiceRegionAsync(string id, RequestOptions options = null)
             => ClientHelper.GetVoiceRegionAsync(this, id, options);
+        /// <inheritdoc />
+        public Task<RestWebhook> GetWebhookAsync(ulong id, RequestOptions options = null)
+            => ClientHelper.GetWebhookAsync(this, id, options);
 
         //IDiscordClient
         async Task<IApplication> IDiscordClient.GetApplicationInfoAsync(RequestOptions options)
@@ -128,8 +131,8 @@ namespace Discord.Rest
         async Task<IReadOnlyCollection<IConnection>> IDiscordClient.GetConnectionsAsync(RequestOptions options)
             => await GetConnectionsAsync(options).ConfigureAwait(false);
 
-        async Task<IInvite> IDiscordClient.GetInviteAsync(string inviteId, RequestOptions options)
-            => await GetInviteAsync(inviteId, options).ConfigureAwait(false);
+        async Task<IInvite> IDiscordClient.GetInviteAsync(string inviteId, bool withCount, RequestOptions options)
+            => await GetInviteAsync(inviteId, withCount, options).ConfigureAwait(false);
 
         async Task<IGuild> IDiscordClient.GetGuildAsync(ulong id, CacheMode mode, RequestOptions options)
         {
@@ -160,5 +163,8 @@ namespace Discord.Rest
             => await GetVoiceRegionsAsync(options).ConfigureAwait(false);
         async Task<IVoiceRegion> IDiscordClient.GetVoiceRegionAsync(string id, RequestOptions options)
             => await GetVoiceRegionAsync(id, options).ConfigureAwait(false);
+
+        async Task<IWebhook> IDiscordClient.GetWebhookAsync(ulong id, RequestOptions options)
+            => await GetWebhookAsync(id, options);
     }
 }
