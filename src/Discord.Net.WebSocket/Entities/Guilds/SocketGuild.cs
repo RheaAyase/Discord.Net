@@ -1,4 +1,3 @@
-﻿#pragma warning disable CS0618
 using Discord.Audio;
 using Discord.Rest;
 using System;
@@ -65,7 +64,7 @@ namespace Discord.WebSocket
         public Task DownloaderPromise => _downloaderPromise.Task;
         public IAudioClient AudioClient => _audioClient;
         public SocketTextChannel DefaultChannel => TextChannels
-            .Where(c => CurrentUser.GetPermissions(c).ReadMessages)
+            .Where(c => CurrentUser.GetPermissions(c).ViewChannel)
             .OrderBy(c => c.Position)
             .FirstOrDefault();
         public SocketVoiceChannel AFKChannel
@@ -96,6 +95,8 @@ namespace Discord.WebSocket
             => Channels.Select(x => x as SocketTextChannel).Where(x => x != null).ToImmutableArray();
         public IReadOnlyCollection<SocketVoiceChannel> VoiceChannels
             => Channels.Select(x => x as SocketVoiceChannel).Where(x => x != null).ToImmutableArray();
+        public IReadOnlyCollection<SocketCategoryChannel> CategoryChannels
+            => Channels.Select(x => x as SocketCategoryChannel).Where(x => x != null).ToImmutableArray();
         public SocketGuildUser CurrentUser => _members.TryGetValue(Discord.CurrentUser.Id, out SocketGuildUser member) ? member : null;
         public SocketRole EveryoneRole => GetRole(Id);
         public IReadOnlyCollection<SocketGuildChannel> Channels
@@ -191,12 +192,9 @@ namespace Discord.WebSocket
 
             _syncPromise = new TaskCompletionSource<bool>();
             _downloaderPromise = new TaskCompletionSource<bool>();
-            if (Discord.ApiClient.AuthTokenType != TokenType.User)
-            {
-                var _ = _syncPromise.TrySetResultAsync(true);
-                /*if (!model.Large)
-                    _ = _downloaderPromise.TrySetResultAsync(true);*/
-            }
+            var _ = _syncPromise.TrySetResultAsync(true);
+            /*if (!model.Large)
+                _ = _downloaderPromise.TrySetResultAsync(true);*/
         }
         internal void Update(ClientState state, Model model)
         {
@@ -291,6 +289,10 @@ namespace Discord.WebSocket
         //Bans
         public Task<IReadOnlyCollection<RestBan>> GetBansAsync(RequestOptions options = null)
             => GuildHelper.GetBansAsync(this, Discord, options);
+        public Task<RestBan> GetBanAsync(IUser user, RequestOptions options = null)
+            => GuildHelper.GetBanAsync(this, Discord, user.Id, options);
+        public Task<RestBan> GetBanAsync(ulong userId, RequestOptions options = null)
+            => GuildHelper.GetBanAsync(this, Discord, userId, options);
 
         public Task AddBanAsync(IUser user, int pruneDays = 0, string reason = null, RequestOptions options = null)
             => GuildHelper.AddBanAsync(this, Discord, user.Id, pruneDays, reason, options);
@@ -318,6 +320,9 @@ namespace Discord.WebSocket
             => GuildHelper.CreateTextChannelAsync(this, Discord, name, options);
         public Task<RestVoiceChannel> CreateVoiceChannelAsync(string name, RequestOptions options = null)
             => GuildHelper.CreateVoiceChannelAsync(this, Discord, name, options);
+        public Task<RestCategoryChannel> CreateCategoryChannelAsync(string name, RequestOptions options = null)
+            => GuildHelper.CreateCategoryChannelAsync(this, Discord, name, options);
+
         internal SocketGuildChannel AddChannel(ClientState state, ChannelModel model)
         {
             var channel = SocketGuildChannel.Create(this, state, model);
@@ -433,6 +438,26 @@ namespace Discord.WebSocket
         {
             _downloaderPromise.TrySetResultAsync(true);
         }
+
+        //Audit logs
+        public IAsyncEnumerable<IReadOnlyCollection<RestAuditLogEntry>> GetAuditLogsAsync(int limit, RequestOptions options = null)
+            => GuildHelper.GetAuditLogsAsync(this, Discord, null, limit, options);
+
+        //Webhooks
+        public Task<RestWebhook> GetWebhookAsync(ulong id, RequestOptions options = null)
+            => GuildHelper.GetWebhookAsync(this, Discord, id, options);
+        public Task<IReadOnlyCollection<RestWebhook>> GetWebhooksAsync(RequestOptions options = null)
+            => GuildHelper.GetWebhooksAsync(this, Discord, options);
+
+        //Emotes
+        public Task<GuildEmote> GetEmoteAsync(ulong id, RequestOptions options = null)
+            => GuildHelper.GetEmoteAsync(this, Discord, id, options);
+        public Task<GuildEmote> CreateEmoteAsync(string name, Image image, Optional<IEnumerable<IRole>> roles = default(Optional<IEnumerable<IRole>>), RequestOptions options = null)
+            => GuildHelper.CreateEmoteAsync(this, Discord, name, image, roles, options);
+        public Task<GuildEmote> ModifyEmoteAsync(GuildEmote emote, Action<EmoteProperties> func, RequestOptions options = null)
+            => GuildHelper.ModifyEmoteAsync(this, Discord, emote.Id, func, options);
+        public Task DeleteEmoteAsync(GuildEmote emote, RequestOptions options = null)
+            => GuildHelper.DeleteEmoteAsync(this, Discord, emote.Id, options);
 
         //Voice States
         internal async Task<SocketVoiceState> AddOrUpdateVoiceStateAsync(ClientState state, VoiceStateModel model)
@@ -625,6 +650,12 @@ namespace Discord.WebSocket
 
         async Task<IReadOnlyCollection<IBan>> IGuild.GetBansAsync(RequestOptions options)
             => await GetBansAsync(options).ConfigureAwait(false);
+        /// <inheritdoc/>
+        async Task<IBan> IGuild.GetBanAsync(IUser user, RequestOptions options)
+            => await GetBanAsync(user, options).ConfigureAwait(false);
+        /// <inheritdoc/>
+        async Task<IBan> IGuild.GetBanAsync(ulong userId, RequestOptions options)
+            => await GetBanAsync(userId, options).ConfigureAwait(false);
 
         Task<IReadOnlyCollection<IGuildChannel>> IGuild.GetChannelsAsync(CacheMode mode, RequestOptions options)
             => Task.FromResult<IReadOnlyCollection<IGuildChannel>>(Channels);
@@ -636,6 +667,8 @@ namespace Discord.WebSocket
             => Task.FromResult<ITextChannel>(GetTextChannel(id));
         Task<IReadOnlyCollection<IVoiceChannel>> IGuild.GetVoiceChannelsAsync(CacheMode mode, RequestOptions options)
             => Task.FromResult<IReadOnlyCollection<IVoiceChannel>>(VoiceChannels);
+        Task<IReadOnlyCollection<ICategoryChannel>> IGuild.GetCategoriesAsync(CacheMode mode , RequestOptions options)
+            => Task.FromResult<IReadOnlyCollection<ICategoryChannel>>(CategoryChannels);
         Task<IVoiceChannel> IGuild.GetVoiceChannelAsync(ulong id, CacheMode mode, RequestOptions options)
             => Task.FromResult<IVoiceChannel>(GetVoiceChannel(id));
         Task<IVoiceChannel> IGuild.GetAFKChannelAsync(CacheMode mode, RequestOptions options)
@@ -650,6 +683,8 @@ namespace Discord.WebSocket
             => await CreateTextChannelAsync(name, options).ConfigureAwait(false);
         async Task<IVoiceChannel> IGuild.CreateVoiceChannelAsync(string name, RequestOptions options)
             => await CreateVoiceChannelAsync(name, options).ConfigureAwait(false);
+        async Task<ICategoryChannel> IGuild.CreateCategoryAsync(string name, RequestOptions options)
+            => await CreateCategoryChannelAsync(name, options).ConfigureAwait(false);
 
         async Task<IReadOnlyCollection<IGuildIntegration>> IGuild.GetIntegrationsAsync(RequestOptions options)
             => await GetIntegrationsAsync(options).ConfigureAwait(false);
@@ -672,6 +707,18 @@ namespace Discord.WebSocket
             => Task.FromResult<IGuildUser>(CurrentUser);
         Task<IGuildUser> IGuild.GetOwnerAsync(CacheMode mode, RequestOptions options)
             => Task.FromResult<IGuildUser>(Owner);
-        Task IGuild.DownloadUsersAsync() { throw new NotSupportedException(); }
+
+        async Task<IReadOnlyCollection<IAuditLogEntry>> IGuild.GetAuditLogAsync(int limit, CacheMode cacheMode, RequestOptions options)
+        {
+            if (cacheMode == CacheMode.AllowDownload)
+                return (await GetAuditLogsAsync(limit, options).FlattenAsync().ConfigureAwait(false)).ToImmutableArray();
+            else
+                return ImmutableArray.Create<IAuditLogEntry>();
+        }
+
+        async Task<IWebhook> IGuild.GetWebhookAsync(ulong id, RequestOptions options)
+            => await GetWebhookAsync(id, options);
+        async Task<IReadOnlyCollection<IWebhook>> IGuild.GetWebhooksAsync(RequestOptions options)
+            => await GetWebhooksAsync(options);
     }
 }

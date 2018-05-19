@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+using Discord.Net.Converters;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -22,7 +23,7 @@ namespace Discord.Net.Rest
         private CancellationToken _cancelToken;
         private bool _isDisposed;
 
-        public DefaultRestClient(string baseUrl)
+        public DefaultRestClient(string baseUrl, bool useProxy = false)
         {
             _baseUrl = baseUrl;
 
@@ -30,7 +31,7 @@ namespace Discord.Net.Rest
             {
                 AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate,
                 UseCookies = false,
-                UseProxy = false
+                UseProxy = useProxy,
             });
             SetHeader("accept-encoding", "gzip, deflate");
 

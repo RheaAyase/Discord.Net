@@ -1,4 +1,6 @@
-﻿namespace Discord.Commands
+using System;
+
+namespace Discord.Commands
 {
     public class CommandServiceConfig
     {
@@ -15,5 +17,8 @@
 
         /// <summary> Determines whether RunMode.Sync commands should push exceptions up to the caller. </summary>
         public bool ThrowOnError { get; set; } = true;
+
+        /// <summary> Determines whether extra parameters should be ignored. </summary>
+        public bool IgnoreExtraArgs { get; set; } = false;
     }
 }

@@ -17,7 +17,7 @@ namespace Discord.Rest
         public string Name { get; private set; }
         public int Position { get; private set; }
         public bool Deleted{ get; set; }
-
+        public ulong? CategoryId { get; private set; }
         public ulong GuildId => Guild.Id;
 
         internal RestGuildChannel(BaseDiscordClient discord, IGuild guild, ulong id)
@@ -33,6 +33,8 @@ namespace Discord.Rest
                     return RestTextChannel.Create(discord, guild, model);
                 case ChannelType.Voice:
                     return RestVoiceChannel.Create(discord, guild, model);
+                case ChannelType.Category:
+                    return RestCategoryChannel.Create(discord, guild, model);
                 default:
                     // TODO: Channel categories
                     return new RestGuildChannel(discord, guild, model.Id);
@@ -62,6 +64,13 @@ namespace Discord.Rest
         }
         public Task DeleteAsync(RequestOptions options = null)
             => ChannelHelper.DeleteAsync(this, Discord, options);
+
+        public async Task<ICategoryChannel> GetCategoryAsync()
+        {
+            if (CategoryId.HasValue)
+                return (await Guild.GetChannelAsync(CategoryId.Value).ConfigureAwait(false)) as ICategoryChannel;
+            return null;
+        }
 
         public OverwritePermissions? GetPermissionOverwrite(IUser user)
         {
@@ -120,7 +129,7 @@ namespace Discord.Rest
 
         public async Task<IReadOnlyCollection<RestInviteMetadata>> GetInvitesAsync(RequestOptions options = null)
             => await ChannelHelper.GetInvitesAsync(this, Discord, options).ConfigureAwait(false);
-        public async Task<RestInviteMetadata> CreateInviteAsync(int? maxAge = 3600, int? maxUses = null, bool isTemporary = false, bool isUnique = false, RequestOptions options = null)
+        public async Task<RestInviteMetadata> CreateInviteAsync(int? maxAge = 86400, int? maxUses = null, bool isTemporary = false, bool isUnique = false, RequestOptions options = null)
             => await ChannelHelper.CreateInviteAsync(this, Discord, maxAge, maxUses, isTemporary, isUnique, options).ConfigureAwait(false);
 
         public override string ToString() => Name;
@@ -155,14 +164,14 @@ namespace Discord.Rest
             => await RemovePermissionOverwriteAsync(user, options).ConfigureAwait(false);
 
         IAsyncEnumerable<IReadOnlyCollection<IGuildUser>> IGuildChannel.GetUsersAsync(CacheMode mode, RequestOptions options)
-            => AsyncEnumerable.Empty<IReadOnlyCollection<IGuildUser>>(); //Overriden //Overriden in Text/Voice
+            => AsyncEnumerable.Empty<IReadOnlyCollection<IGuildUser>>(); //Overridden //Overridden in Text/Voice
         Task<IGuildUser> IGuildChannel.GetUserAsync(ulong id, CacheMode mode, RequestOptions options)
-            => Task.FromResult<IGuildUser>(null); //Overriden in Text/Voice
+            => Task.FromResult<IGuildUser>(null); //Overridden in Text/Voice
 
         //IChannel
         IAsyncEnumerable<IReadOnlyCollection<IUser>> IChannel.GetUsersAsync(CacheMode mode, RequestOptions options)
-            => AsyncEnumerable.Empty<IReadOnlyCollection<IUser>>(); //Overriden in Text/Voice
+            => AsyncEnumerable.Empty<IReadOnlyCollection<IUser>>(); //Overridden in Text/Voice
         Task<IUser> IChannel.GetUserAsync(ulong id, CacheMode mode, RequestOptions options)
-            => Task.FromResult<IUser>(null); //Overriden in Text/Voice
+            => Task.FromResult<IUser>(null); //Overridden in Text/Voice
     }
 }

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Immutable;
 using System.Text;
 using System.Threading.Tasks;
@@ -14,7 +14,7 @@ namespace Discord.Commands
             QuotedParameter
         }
         
-        public static async Task<ParseResult> ParseArgs(CommandInfo command, ICommandContext context, IServiceProvider services, string input, int startPos)
+        public static async Task<ParseResult> ParseArgsAsync(CommandInfo command, ICommandContext context, IServiceProvider services, string input, int startPos)
         {
             ParameterInfo curParam = null;
             StringBuilder argBuilder = new StringBuilder(input.Length);
@@ -109,9 +109,14 @@ namespace Discord.Commands
                 if (argString != null)
                 {
                     if (curParam == null)
-                        return ParseResult.FromError(CommandError.BadArgCount, "The input text has too many parameters.");
+                    {
+                        if (command.IgnoreExtraArgs)
+                            break;
+                        else
+                            return ParseResult.FromError(CommandError.BadArgCount, "The input text has too many parameters.");
+                    }
 
-                    var typeReaderResult = await curParam.Parse(context, argString, services).ConfigureAwait(false);
+                    var typeReaderResult = await curParam.ParseAsync(context, argString, services).ConfigureAwait(false);
                     if (!typeReaderResult.IsSuccess && typeReaderResult.Error != CommandError.MultipleMatches)
                         return ParseResult.FromError(typeReaderResult);
 
@@ -134,7 +139,7 @@ namespace Discord.Commands
 
             if (curParam != null && curParam.IsRemainder)
             {
-                var typeReaderResult = await curParam.Parse(context, argBuilder.ToString(), services).ConfigureAwait(false);
+                var typeReaderResult = await curParam.ParseAsync(context, argBuilder.ToString(), services).ConfigureAwait(false);
                 if (!typeReaderResult.IsSuccess)
                     return ParseResult.FromError(typeReaderResult);
                 argList.Add(typeReaderResult);

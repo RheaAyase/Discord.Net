@@ -1,4 +1,4 @@
-﻿using Discord.API;
+using Discord.API;
 using Discord.Rest;
 using System;
 using System.Collections.Generic;
@@ -22,7 +22,7 @@ namespace Discord.WebSocket
         /// <summary> Gets the estimated round-trip latency, in milliseconds, to the gateway server. </summary>
         public override int Latency { get => GetLatency(); protected set { } }
         public override UserStatus Status { get => _shards[0].Status; protected set { } }
-        public override Game? Game { get => _shards[0].Game; protected set { } }
+        public override IActivity Activity { get => _shards[0].Activity; protected set { } }
 
         internal new DiscordSocketApiClient ApiClient => base.ApiClient as DiscordSocketApiClient;
         public override IReadOnlyCollection<SocketGuild> Guilds => GetGuilds().ToReadOnlyCollection(() => GetGuildCount());
@@ -75,8 +75,8 @@ namespace Discord.WebSocket
         {
             if (_automaticShards)
             {
-                var response = await ApiClient.GetBotGatewayAsync().ConfigureAwait(false);
-                _shardIds = Enumerable.Range(0, response.Shards).ToArray();
+                var shardCount = await GetRecommendedShardCountAsync().ConfigureAwait(false);
+                _shardIds = Enumerable.Range(0, shardCount).ToArray();
                 _totalShards = _shardIds.Length;
                 _shards = new DiscordSocketClient[_shardIds.Length];
                 for (int i = 0; i < _shardIds.Length; i++)
@@ -129,11 +129,11 @@ namespace Discord.WebSocket
         private int GetShardIdFor(ulong guildId)
             => (int)((guildId >> 22) % (uint)_totalShards);
         public int GetShardIdFor(IGuild guild)
-            => GetShardIdFor(guild.Id);
+            => GetShardIdFor(guild?.Id ?? 0);
         private DiscordSocketClient GetShardFor(ulong guildId)
             => GetShard(GetShardIdFor(guildId));
         public DiscordSocketClient GetShardFor(IGuild guild)
-            => GetShardFor(guild.Id);
+            => GetShardFor(guild?.Id ?? 0);
 
         /// <inheritdoc />
         public override async Task<RestApplication> GetApplicationInfoAsync(RequestOptions options = null)
@@ -238,10 +238,19 @@ namespace Discord.WebSocket
             for (int i = 0; i < _shards.Length; i++)
                 await _shards[i].SetStatusAsync(status).ConfigureAwait(false);
         }
-        public override async Task SetGameAsync(string name, string streamUrl = null, StreamType streamType = StreamType.NotStreaming)
+        public override async Task SetGameAsync(string name, string streamUrl = null, ActivityType type = ActivityType.Playing)
+        {
+            IActivity activity = null;
+            if (!string.IsNullOrEmpty(streamUrl))
+                activity = new StreamingGame(name, streamUrl);
+            else if (!string.IsNullOrEmpty(name))
+                activity = new Game(name, type);
+            await SetActivityAsync(activity).ConfigureAwait(false);
+        }
+        public override async Task SetActivityAsync(IActivity activity)
         {
             for (int i = 0; i < _shards.Length; i++)
-                await _shards[i].SetGameAsync(name, streamUrl, streamType).ConfigureAwait(false);
+                await _shards[i].SetActivityAsync(activity).ConfigureAwait(false);
         }
 
         private void RegisterEvents(DiscordSocketClient client, bool isPrimary)
@@ -318,8 +327,8 @@ namespace Discord.WebSocket
         async Task<IReadOnlyCollection<IConnection>> IDiscordClient.GetConnectionsAsync(RequestOptions options)
             => await GetConnectionsAsync().ConfigureAwait(false);
 
-        async Task<IInvite> IDiscordClient.GetInviteAsync(string inviteId, RequestOptions options)
-            => await GetInviteAsync(inviteId).ConfigureAwait(false);
+        async Task<IInvite> IDiscordClient.GetInviteAsync(string inviteId, bool withCount, RequestOptions options)
+            => await GetInviteAsync(inviteId, withCount, options).ConfigureAwait(false);
 
         Task<IGuild> IDiscordClient.GetGuildAsync(ulong id, CacheMode mode, RequestOptions options)
             => Task.FromResult<IGuild>(GetGuild(id));

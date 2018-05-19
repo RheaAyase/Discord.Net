@@ -1,4 +1,4 @@
-﻿using Discord.API.Rest;
+using Discord.API.Rest;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
@@ -50,12 +50,16 @@ namespace Discord.Rest
             return models.Select(x => RestConnection.Create(x)).ToImmutableArray();
         }
         
-        public static async Task<RestInvite> GetInviteAsync(BaseDiscordClient client,
-            string inviteId, RequestOptions options)
+        public static async Task<RestInviteMetadata> GetInviteAsync(BaseDiscordClient client,
+            string inviteId, bool withCount, RequestOptions options)
         {
-            var model = await client.ApiClient.GetInviteAsync(inviteId, options).ConfigureAwait(false);
+            var args = new GetInviteParams
+            {
+                WithCounts = withCount
+            };
+            var model = await client.ApiClient.GetInviteAsync(inviteId, args, options).ConfigureAwait(false);
             if (model != null)
-                return RestInvite.Create(client, null, null, model);
+                return RestInviteMetadata.Create(client, null, null, model);
             return null;
         }
         
@@ -79,7 +83,7 @@ namespace Discord.Rest
             ulong? fromGuildId, int? limit, RequestOptions options)
         {
             return new PagedAsyncEnumerable<RestUserGuild>(
-                DiscordConfig.MaxUsersPerBatch,
+                DiscordConfig.MaxGuildsPerBatch,
                 async (info, ct) =>
                 {
                     var args = new GetGuildSummariesParams
@@ -106,7 +110,7 @@ namespace Discord.Rest
         }
         public static async Task<IReadOnlyCollection<RestGuild>> GetGuildsAsync(BaseDiscordClient client, RequestOptions options)
         {
-            var summaryModels = await GetGuildSummariesAsync(client, null, null, options).Flatten();
+            var summaryModels = await GetGuildSummariesAsync(client, null, null, options).FlattenAsync().ConfigureAwait(false);
             var guilds = ImmutableArray.CreateBuilder<RestGuild>();
             foreach (var summaryModel in summaryModels)
             {
@@ -144,6 +148,14 @@ namespace Discord.Rest
             return null;
         }
 
+        public static async Task<RestWebhook> GetWebhookAsync(BaseDiscordClient client, ulong id, RequestOptions options)
+        {
+            var model = await client.ApiClient.GetWebhookAsync(id);
+            if (model != null)
+                return RestWebhook.Create(client, (IGuild)null, model);
+            return null;
+        }
+
         public static async Task<IReadOnlyCollection<RestVoiceRegion>> GetVoiceRegionsAsync(BaseDiscordClient client, RequestOptions options)
         {
             var models = await client.ApiClient.GetVoiceRegionsAsync(options).ConfigureAwait(false);
@@ -154,6 +166,12 @@ namespace Discord.Rest
         {
             var models = await client.ApiClient.GetVoiceRegionsAsync(options).ConfigureAwait(false);
             return models.Select(x => RestVoiceRegion.Create(client, x)).FirstOrDefault(x => x.Id == id);
+        }
+
+        public static async Task<int> GetRecommendShardCountAsync(BaseDiscordClient client, RequestOptions options)
+        {
+            var response = await client.ApiClient.GetBotGatewayAsync(options).ConfigureAwait(false);
+            return response.Shards;
         }
     }
 }
