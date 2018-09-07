@@ -25,13 +25,17 @@ namespace Discord.Rest
             };
             return await client.ApiClient.ModifyMessageAsync(msg.Channel.Id, msg.Id, apiArgs, options).ConfigureAwait(false);
         }
-        public static Task DeleteAsync(IMessage msg, BaseDiscordClient client, RequestOptions options)
-            => DeleteAsync(msg.Channel.Id, msg.Id, client, options);
+
+        public static async Task DeleteAsync(IMessage msg, BaseDiscordClient client, RequestOptions options)
+        {
+            msg.Deleted = true;
+            await DeleteAsync(msg.Channel.Id, msg.Id, client, options);
+        }
+
         public static async Task DeleteAsync(ulong channelId, ulong msgId, BaseDiscordClient client,
             RequestOptions options)
         {
             await client.ApiClient.DeleteMessageAsync(channelId, msgId, options).ConfigureAwait(false);
-            msg.Deleted = true;
         }
 
         public static async Task AddReactionAsync(IMessage msg, IEmote emote, BaseDiscordClient client, RequestOptions options)
