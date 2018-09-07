@@ -7,7 +7,7 @@ namespace Discord.Rest
 {
     public class RoleCreateAuditLogData : IAuditLogData
     {
-        private RoleCreateAuditLogData(ulong id, RoleInfo props)
+        private RoleCreateAuditLogData(ulong id, RoleEditInfo props)
         {
             RoleId = id;
             Properties = props;
@@ -23,11 +23,11 @@ namespace Discord.Rest
             var nameModel = changes.FirstOrDefault(x => x.ChangedProperty == "name");
             var permissionsModel = changes.FirstOrDefault(x => x.ChangedProperty == "permissions");
 
-            uint? colorRaw = colorModel?.NewValue?.ToObject<uint>();
-            bool? mentionable = mentionableModel?.NewValue?.ToObject<bool>();
-            bool? hoist = hoistModel?.NewValue?.ToObject<bool>();
-            string name = nameModel?.NewValue?.ToObject<string>();
-            ulong? permissionsRaw = permissionsModel?.NewValue?.ToObject<ulong>();
+            uint? colorRaw = colorModel?.NewValue?.ToObject<uint>(discord.ApiClient.Serializer);
+            bool? mentionable = mentionableModel?.NewValue?.ToObject<bool>(discord.ApiClient.Serializer);
+            bool? hoist = hoistModel?.NewValue?.ToObject<bool>(discord.ApiClient.Serializer);
+            string name = nameModel?.NewValue?.ToObject<string>(discord.ApiClient.Serializer);
+            ulong? permissionsRaw = permissionsModel?.NewValue?.ToObject<ulong>(discord.ApiClient.Serializer);
 
             Color? color = null;
             GuildPermissions? permissions = null;
@@ -38,10 +38,10 @@ namespace Discord.Rest
                 permissions = new GuildPermissions(permissionsRaw.Value);
 
             return new RoleCreateAuditLogData(entry.TargetId.Value,
-                new RoleInfo(color, mentionable, hoist, name, permissions));
+                new RoleEditInfo(color, mentionable, hoist, name, permissions));
         }
 
         public ulong RoleId { get; }
-        public RoleInfo Properties { get; }
+        public RoleEditInfo Properties { get; }
     }
 }

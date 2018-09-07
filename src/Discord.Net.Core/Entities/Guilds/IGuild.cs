@@ -109,9 +109,9 @@ namespace Discord
         Task<ITextChannel> GetDefaultChannelAsync(CacheMode mode = CacheMode.AllowDownload, RequestOptions options = null);
         Task<IGuildChannel> GetEmbedChannelAsync(CacheMode mode = CacheMode.AllowDownload, RequestOptions options = null);
         /// <summary> Creates a new text channel. </summary>
-        Task<ITextChannel> CreateTextChannelAsync(string name, RequestOptions options = null);
+        Task<ITextChannel> CreateTextChannelAsync(string name, Action<TextChannelProperties> func = null, RequestOptions options = null);
         /// <summary> Creates a new voice channel. </summary>
-        Task<IVoiceChannel> CreateVoiceChannelAsync(string name, RequestOptions options = null);
+        Task<IVoiceChannel> CreateVoiceChannelAsync(string name, Action<VoiceChannelProperties> func = null, RequestOptions options = null);
         /// <summary> Creates a new channel category. </summary>
         Task<ICategoryChannel> CreateCategoryAsync(string name, RequestOptions options = null);
 
@@ -120,6 +120,15 @@ namespace Discord
 
         /// <summary> Gets a collection of all invites to this guild. </summary>
         Task<IReadOnlyCollection<IInviteMetadata>> GetInvitesAsync(RequestOptions options = null);
+        /// <summary>
+        ///     Gets the vanity invite URL of this guild.
+        /// </summary>
+        /// <param name="options">The options to be used when sending the request.</param>
+        /// <returns>
+        ///     An awaitable <see cref="Task"/> containing the partial metadata of the vanity invite found within
+        ///     this guild.
+        /// </returns>
+        Task<IInviteMetadata> GetVanityInviteAsync(RequestOptions options = null);
 
         /// <summary> Gets the role in this guild with the provided id, or null if not found. </summary>
         IRole GetRole(ulong id);
@@ -140,7 +149,7 @@ namespace Discord
         Task<int> PruneUsersAsync(int days = 30, bool simulate = false, RequestOptions options = null);
 
         /// <summary> Gets the specified number of audit log entries for this guild. </summary>
-        Task<IReadOnlyCollection<IAuditLogEntry>> GetAuditLogAsync(int limit = DiscordConfig.MaxAuditLogEntriesPerBatch,
+        Task<IReadOnlyCollection<IAuditLogEntry>> GetAuditLogsAsync(int limit = DiscordConfig.MaxAuditLogEntriesPerBatch,
             CacheMode mode = CacheMode.AllowDownload, RequestOptions options = null);
 
         /// <summary> Gets the webhook in this guild with the provided id, or null if not found. </summary>

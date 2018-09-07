@@ -12,12 +12,12 @@ namespace Discord.WebSocket
     [DebuggerDisplay(@"{DebuggerDisplay,nq}")]
     public class SocketUserMessage : SocketMessage, IUserMessage
     {
+        private readonly List<SocketReaction> _reactions = new List<SocketReaction>();
         private bool _isMentioningEveryone, _isTTS, _isPinned;
         private long? _editedTimestampTicks;
         private ImmutableArray<Attachment> _attachments;
         private ImmutableArray<Embed> _embeds;
         private ImmutableArray<ITag> _tags;
-        private List<SocketReaction> _reactions = new List<SocketReaction>();
         
         public override bool IsTTS => _isTTS;
         public override bool IsPinned => _isPinned;
@@ -130,8 +130,8 @@ namespace Discord.WebSocket
             => MessageHelper.RemoveReactionAsync(this, user, emote, Discord, options);
         public Task RemoveAllReactionsAsync(RequestOptions options = null)
             => MessageHelper.RemoveAllReactionsAsync(this, Discord, options);
-        public Task<IReadOnlyCollection<IUser>> GetReactionUsersAsync(IEmote emote, int limit = 100, ulong? afterUserId = null, RequestOptions options = null)
-            => MessageHelper.GetReactionUsersAsync(this, emote, x => { x.Limit = limit; x.AfterUserId = afterUserId ?? Optional.Create<ulong>(); }, Discord, options);
+        public IAsyncEnumerable<IReadOnlyCollection<IUser>> GetReactionUsersAsync(IEmote emote, int limit, RequestOptions options = null)
+            => MessageHelper.GetReactionUsersAsync(this, emote, limit, Discord, options);
 
         public Task PinAsync(RequestOptions options = null)
             => MessageHelper.PinAsync(this, Discord, options);

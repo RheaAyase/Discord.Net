@@ -32,6 +32,7 @@ namespace Discord.Commands
         internal readonly RunMode _defaultRunMode;
         internal readonly Logger _cmdLogger;
         internal readonly LogManager _logManager;
+        internal readonly IReadOnlyDictionary<char, char> _quotationMarkAliasMap;
 
         public IEnumerable<ModuleInfo> Modules => _moduleDefs.Select(x => x);
         public IEnumerable<CommandInfo> Commands => _moduleDefs.SelectMany(x => x.Commands);
@@ -45,6 +46,7 @@ namespace Discord.Commands
             _ignoreExtraArgs = config.IgnoreExtraArgs;
             _separatorChar = config.SeparatorChar;
             _defaultRunMode = config.DefaultRunMode;
+            _quotationMarkAliasMap = (config.QuotationMarkAliasMap ?? new Dictionary<char, char>()).ToImmutableDictionary();
             if (_defaultRunMode == RunMode.Default)
                 throw new InvalidOperationException("The default run mode cannot be set to Default.");
 
@@ -64,6 +66,10 @@ namespace Discord.Commands
                 _defaultTypeReaders[type] = PrimitiveTypeReader.Create(type);
                 _defaultTypeReaders[typeof(Nullable<>).MakeGenericType(type)] = NullableTypeReader.Create(type, _defaultTypeReaders[type]);
             }
+
+            var tsreader = new TimeSpanTypeReader();
+            _defaultTypeReaders[typeof(TimeSpan)] = tsreader;
+            _defaultTypeReaders[typeof(TimeSpan?)] = NullableTypeReader.Create(typeof(TimeSpan), tsreader);
 
             _defaultTypeReaders[typeof(string)] =
                 new PrimitiveTypeReader<string>((string x, out string y) => { y = x; return true; }, 0);
@@ -112,7 +118,7 @@ namespace Discord.Commands
                 var typeInfo = type.GetTypeInfo();
 
                 if (_typedModuleDefs.ContainsKey(type))
-                    throw new ArgumentException($"This module has already been added.");
+                    throw new ArgumentException("This module has already been added.");
 
                 var module = (await ModuleClassBuilder.BuildAsync(this, services, typeInfo).ConfigureAwait(false)).FirstOrDefault();
 
@@ -235,7 +241,7 @@ namespace Discord.Commands
         {
             if (_defaultTypeReaders.ContainsKey(type))
                 _ = _cmdLogger.WarningAsync($"The default TypeReader for {type.FullName} was replaced by {reader.GetType().FullName}." +
-                    $"To suppress this message, use AddTypeReader<T>(reader, true).");
+                    "To suppress this message, use AddTypeReader<T>(reader, true).");
             AddTypeReader(type, reader, true);
         }
         /// <summary>
@@ -256,7 +262,7 @@ namespace Discord.Commands
         /// <param name="replaceDefault">If <paramref name="reader"/> should replace the default <see cref="TypeReader"/> for <paramref name="type"/> if one exists.</param>
         public void AddTypeReader(Type type, TypeReader reader, bool replaceDefault)
         {
-            if (replaceDefault && _defaultTypeReaders.ContainsKey(type))
+            if (replaceDefault && HasDefaultTypeReader(type))
             {
                 _defaultTypeReaders.AddOrUpdate(type, reader, (k, v) => reader);
                 if (type.GetTypeInfo().IsValueType)
@@ -274,6 +280,16 @@ namespace Discord.Commands
                 if (type.GetTypeInfo().IsValueType)
                     AddNullableTypeReader(type, reader);
             }
+        }
+        internal bool HasDefaultTypeReader(Type type)
+        {
+            if (_defaultTypeReaders.ContainsKey(type))
+                return true;
+
+            var typeInfo = type.GetTypeInfo();
+            if (typeInfo.IsEnum)
+                return true;
+            return _entityTypeReaders.Any(x => type == x.Item1 || typeInfo.ImplementedInterfaces.Contains(x.Item2));
         }
         internal void AddNullableTypeReader(Type valueType, TypeReader valueTypeReader)
         {
@@ -316,8 +332,10 @@ namespace Discord.Commands
 
         //Execution
         public SearchResult Search(ICommandContext context, int argPos)
-            => Search(context, context.Message.Content.Substring(argPos));
+            => Search(context.Message.Content.Substring(argPos));
         public SearchResult Search(ICommandContext context, string input)
+            => Search(input);
+        public SearchResult Search(string input)
         {
             string searchInput = _caseSensitive ? input : input.ToLowerInvariant();
             var matches = _map.GetCommands(searchInput).OrderByDescending(x => x.Command.Priority).ToImmutableArray();
@@ -334,7 +352,7 @@ namespace Discord.Commands
         {
             services = services ?? EmptyServiceProvider.Instance;
 
-            var searchResult = Search(context, input);
+            var searchResult = Search(input);
             if (!searchResult.IsSuccess)
                 return searchResult;
 

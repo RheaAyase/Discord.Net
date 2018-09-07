@@ -1,4 +1,4 @@
-﻿using Discord.Rest;
+using Discord.Rest;
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -18,9 +18,6 @@ namespace Discord.WebSocket
         public string Name { get; private set; }
         public int Position { get; private set; }
         public bool Deleted{ get; set; }
-        public ulong? CategoryId { get; private set; }
-        public ICategoryChannel Category 
-            => CategoryId.HasValue ? Guild.GetChannel(CategoryId.Value) as ICategoryChannel : null;
 
         public IReadOnlyCollection<Overwrite> PermissionOverwrites => _overwrites;
         public new virtual IReadOnlyCollection<SocketGuildUser> Users => ImmutableArray.Create<SocketGuildUser>();
@@ -49,8 +46,7 @@ namespace Discord.WebSocket
         {
             Name = model.Name.Value;
             Position = model.Position.Value;
-            CategoryId = model.CategoryId;
-
+            
             var overwrites = model.PermissionOverwrites.Value;
             var newOverwrites = ImmutableArray.CreateBuilder<Overwrite>(overwrites.Length);
             for (int i = 0; i < overwrites.Length; i++)
@@ -135,9 +131,6 @@ namespace Discord.WebSocket
         //IGuildChannel
         IGuild IGuildChannel.Guild => Guild;
         ulong IGuildChannel.GuildId => Guild.Id;
-
-        Task<ICategoryChannel> IGuildChannel.GetCategoryAsync()
-            => Task.FromResult(Category);
 
         async Task<IReadOnlyCollection<IInviteMetadata>> IGuildChannel.GetInvitesAsync(RequestOptions options)
             => await GetInvitesAsync(options).ConfigureAwait(false);

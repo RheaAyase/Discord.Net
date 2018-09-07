@@ -7,7 +7,7 @@ namespace Discord.Rest
 {
     public class RoleUpdateAuditLogData : IAuditLogData
     {
-        private RoleUpdateAuditLogData(ulong id, RoleInfo oldProps, RoleInfo newProps)
+        private RoleUpdateAuditLogData(ulong id, RoleEditInfo oldProps, RoleEditInfo newProps)
         {
             RoleId = id;
             Before = oldProps;
@@ -24,16 +24,16 @@ namespace Discord.Rest
             var nameModel = changes.FirstOrDefault(x => x.ChangedProperty == "name");
             var permissionsModel = changes.FirstOrDefault(x => x.ChangedProperty == "permissions");
 
-            uint? oldColorRaw = colorModel?.OldValue?.ToObject<uint>(),
-                newColorRaw = colorModel?.NewValue?.ToObject<uint>();
-            bool? oldMentionable = mentionableModel?.OldValue?.ToObject<bool>(),
-                newMentionable = mentionableModel?.NewValue?.ToObject<bool>();
-            bool? oldHoist = hoistModel?.OldValue?.ToObject<bool>(),
-                newHoist = hoistModel?.NewValue?.ToObject<bool>();
-            string oldName = nameModel?.OldValue?.ToObject<string>(),
-                newName = nameModel?.NewValue?.ToObject<string>();
-            ulong? oldPermissionsRaw = permissionsModel?.OldValue?.ToObject<ulong>(),
-                newPermissionsRaw = permissionsModel?.OldValue?.ToObject<ulong>();
+            uint? oldColorRaw = colorModel?.OldValue?.ToObject<uint>(discord.ApiClient.Serializer),
+                newColorRaw = colorModel?.NewValue?.ToObject<uint>(discord.ApiClient.Serializer);
+            bool? oldMentionable = mentionableModel?.OldValue?.ToObject<bool>(discord.ApiClient.Serializer),
+                newMentionable = mentionableModel?.NewValue?.ToObject<bool>(discord.ApiClient.Serializer);
+            bool? oldHoist = hoistModel?.OldValue?.ToObject<bool>(discord.ApiClient.Serializer),
+                newHoist = hoistModel?.NewValue?.ToObject<bool>(discord.ApiClient.Serializer);
+            string oldName = nameModel?.OldValue?.ToObject<string>(discord.ApiClient.Serializer),
+                newName = nameModel?.NewValue?.ToObject<string>(discord.ApiClient.Serializer);
+            ulong? oldPermissionsRaw = permissionsModel?.OldValue?.ToObject<ulong>(discord.ApiClient.Serializer),
+                newPermissionsRaw = permissionsModel?.OldValue?.ToObject<ulong>(discord.ApiClient.Serializer);
 
             Color? oldColor = null,
                 newColor = null;
@@ -49,14 +49,14 @@ namespace Discord.Rest
             if (newPermissionsRaw.HasValue)
                 newPermissions = new GuildPermissions(newPermissionsRaw.Value);
 
-            var oldProps = new RoleInfo(oldColor, oldMentionable, oldHoist, oldName, oldPermissions);
-            var newProps = new RoleInfo(newColor, newMentionable, newHoist, newName, newPermissions);
+            var oldProps = new RoleEditInfo(oldColor, oldMentionable, oldHoist, oldName, oldPermissions);
+            var newProps = new RoleEditInfo(newColor, newMentionable, newHoist, newName, newPermissions);
 
             return new RoleUpdateAuditLogData(entry.TargetId.Value, oldProps, newProps);
         }
 
         public ulong RoleId { get; }
-        public RoleInfo Before { get; }
-        public RoleInfo After { get; }
+        public RoleEditInfo Before { get; }
+        public RoleEditInfo After { get; }
     }
 }

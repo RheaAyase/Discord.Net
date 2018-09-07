@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -33,15 +33,13 @@ namespace Discord.Webhook
             var model = await client.ApiClient.CreateWebhookMessageAsync(client.Webhook.Id, args, options: options).ConfigureAwait(false);
             return model.Id;
         }
-#if FILESYSTEM
-        public static async Task<ulong> SendFileAsync(DiscordWebhookClient client, string filePath, string text, bool isTTS,
+        public static async Task<ulong> SendFileAsync(DiscordWebhookClient client, string filePath, string text, bool isTTS, 
             IEnumerable<Embed> embeds, string username, string avatarUrl, RequestOptions options)
         {
             string filename = Path.GetFileName(filePath);
             using (var file = File.OpenRead(filePath))
                 return await SendFileAsync(client, file, filename, text, isTTS, embeds, username, avatarUrl, options).ConfigureAwait(false);
         }
-#endif
         public static async Task<ulong> SendFileAsync(DiscordWebhookClient client, Stream stream, string filename, string text, bool isTTS,
             IEnumerable<Embed> embeds, string username, string avatarUrl, RequestOptions options)
         {

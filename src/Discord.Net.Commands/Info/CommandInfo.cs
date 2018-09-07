@@ -63,7 +63,7 @@ namespace Discord.Commands
             Attributes = builder.Attributes.ToImmutableArray();
 
             Parameters = builder.Parameters.Select(x => x.Build(this)).ToImmutableArray();
-            HasVarArgs = builder.Parameters.Count > 0 ? builder.Parameters[builder.Parameters.Count - 1].IsMultiple : false;
+            HasVarArgs = builder.Parameters.Count > 0 && builder.Parameters[builder.Parameters.Count - 1].IsMultiple;
             IgnoreExtraArgs = builder.IgnoreExtraArgs;
 
             _action = builder.Callback;
@@ -121,7 +121,8 @@ namespace Discord.Commands
                 return ParseResult.FromError(preconditionResult);
 
             string input = searchResult.Text.Substring(startIndex);
-            return await CommandParser.ParseArgsAsync(this, context, services, input, 0).ConfigureAwait(false);
+
+            return await CommandParser.ParseArgsAsync(this, context, _commandService._ignoreExtraArgs, services, input, 0, _commandService._quotationMarkAliasMap).ConfigureAwait(false);
         }
 
         public Task<IResult> ExecuteAsync(ICommandContext context, ParseResult parseResult, IServiceProvider services)

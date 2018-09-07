@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 
 namespace Discord
 {
@@ -16,7 +16,9 @@ namespace Discord
         // Text
         AddReactions        = 0x00_00_00_40,
         ViewAuditLog        = 0x00_00_00_80,
-        ReadMessages        = 0x00_00_04_00,
+        [Obsolete("Use ViewChannel instead.")]
+        ReadMessages        = ViewChannel,
+        ViewChannel         = 0x00_00_04_00,
         SendMessages        = 0x00_00_08_00,
         SendTTSMessages     = 0x00_00_10_00,
         ManageMessages      = 0x00_00_20_00,
@@ -33,6 +35,7 @@ namespace Discord
         DeafenMembers       = 0x00_80_00_00,
         MoveMembers         = 0x01_00_00_00,
         UseVAD              = 0x02_00_00_00,
+        PrioritySpeaker     = 0x00_00_01_00,
 
         // General 2
         ChangeNickname      = 0x04_00_00_00,

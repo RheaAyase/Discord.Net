@@ -13,11 +13,11 @@ namespace Discord.WebSocket
     {
         private readonly DiscordSocketConfig _baseConfig;
         private readonly SemaphoreSlim _connectionGroupLock;
+        private readonly Dictionary<int, int> _shardIdsToIndex;
+        private readonly bool _automaticShards;
         private int[] _shardIds;
-        private Dictionary<int, int> _shardIdsToIndex;
         private DiscordSocketClient[] _shards;
         private int _totalShards;
-        private bool _automaticShards;
         
         /// <summary> Gets the estimated round-trip latency, in milliseconds, to the gateway server. </summary>
         public override int Latency { get => GetLatency(); protected set { } }
@@ -25,8 +25,8 @@ namespace Discord.WebSocket
         public override IActivity Activity { get => _shards[0].Activity; protected set { } }
 
         internal new DiscordSocketApiClient ApiClient => base.ApiClient as DiscordSocketApiClient;
-        public override IReadOnlyCollection<SocketGuild> Guilds => GetGuilds().ToReadOnlyCollection(() => GetGuildCount());
-        public override IReadOnlyCollection<ISocketPrivateChannel> PrivateChannels => GetPrivateChannels().ToReadOnlyCollection(() => GetPrivateChannelCount());
+        public override IReadOnlyCollection<SocketGuild> Guilds => GetGuilds().ToReadOnlyCollection(GetGuildCount);
+        public override IReadOnlyCollection<ISocketPrivateChannel> PrivateChannels => GetPrivateChannels().ToReadOnlyCollection(GetPrivateChannelCount);
         public IReadOnlyCollection<DiscordSocketClient> Shards => _shards;
         public override IReadOnlyCollection<RestVoiceRegion> VoiceRegions => _shards[0].VoiceRegions;
 
@@ -309,6 +309,7 @@ namespace Discord.WebSocket
             client.UserUpdated += (oldUser, newUser) => _userUpdatedEvent.InvokeAsync(oldUser, newUser);
             client.GuildMemberUpdated += (oldUser, newUser) => _guildMemberUpdatedEvent.InvokeAsync(oldUser, newUser);
             client.UserVoiceStateUpdated += (user, oldVoiceState, newVoiceState) => _userVoiceStateUpdatedEvent.InvokeAsync(user, oldVoiceState, newVoiceState);
+            client.VoiceServerUpdated += (server) => _voiceServerUpdatedEvent.InvokeAsync(server);
             client.CurrentUserUpdated += (oldUser, newUser) => _selfUpdatedEvent.InvokeAsync(oldUser, newUser);
             client.UserIsTyping += (oldUser, newUser) => _userIsTypingEvent.InvokeAsync(oldUser, newUser);
             client.RecipientAdded += (user) => _recipientAddedEvent.InvokeAsync(user);
@@ -327,8 +328,8 @@ namespace Discord.WebSocket
         async Task<IReadOnlyCollection<IConnection>> IDiscordClient.GetConnectionsAsync(RequestOptions options)
             => await GetConnectionsAsync().ConfigureAwait(false);
 
-        async Task<IInvite> IDiscordClient.GetInviteAsync(string inviteId, bool withCount, RequestOptions options)
-            => await GetInviteAsync(inviteId, withCount, options).ConfigureAwait(false);
+        async Task<IInvite> IDiscordClient.GetInviteAsync(string inviteId, RequestOptions options)
+            => await GetInviteAsync(inviteId, options).ConfigureAwait(false);
 
         Task<IGuild> IDiscordClient.GetGuildAsync(ulong id, CacheMode mode, RequestOptions options)
             => Task.FromResult<IGuild>(GetGuild(id));

@@ -1,10 +1,11 @@
-﻿using System.Reflection;
+using System.Reflection;
 
 namespace Discord
 {
     public class DiscordConfig
     {
         public const int APIVersion = 6;
+        public const int VoiceAPIVersion = 3;
         public static string Version { get; } =
             typeof(DiscordConfig).GetTypeInfo().Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion ??
             typeof(DiscordConfig).GetTypeInfo().Assembly.GetName().Version.ToString(3) ??
@@ -20,6 +21,7 @@ namespace Discord
         public const int MaxMessagesPerBatch = 100;
         public const int MaxUsersPerBatch = 1000;
         public const int MaxGuildsPerBatch = 100;
+        public const int MaxUserReactionsPerBatch = 100;
         public const int MaxAuditLogEntriesPerBatch = 100;
 
         /// <summary> Gets or sets how a request should act in the case of an error, by default. </summary>

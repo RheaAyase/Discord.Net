@@ -47,17 +47,13 @@ namespace Discord.Rest
         public static async Task<IReadOnlyCollection<RestConnection>> GetConnectionsAsync(BaseDiscordClient client, RequestOptions options)
         {
             var models = await client.ApiClient.GetMyConnectionsAsync(options).ConfigureAwait(false);
-            return models.Select(x => RestConnection.Create(x)).ToImmutableArray();
+            return models.Select(RestConnection.Create).ToImmutableArray();
         }
         
         public static async Task<RestInviteMetadata> GetInviteAsync(BaseDiscordClient client,
-            string inviteId, bool withCount, RequestOptions options)
+            string inviteId, RequestOptions options)
         {
-            var args = new GetInviteParams
-            {
-                WithCounts = withCount
-            };
-            var model = await client.ApiClient.GetInviteAsync(inviteId, args, options).ConfigureAwait(false);
+            var model = await client.ApiClient.GetInviteAsync(inviteId, options).ConfigureAwait(false);
             if (model != null)
                 return RestInviteMetadata.Create(client, null, null, model);
             return null;
@@ -142,9 +138,14 @@ namespace Discord.Rest
         public static async Task<RestGuildUser> GetGuildUserAsync(BaseDiscordClient client,
             ulong guildId, ulong id, RequestOptions options)
         {
+            var guild = await GetGuildAsync(client, guildId, options).ConfigureAwait(false);
+            if (guild == null)
+                return null;
+
             var model = await client.ApiClient.GetGuildMemberAsync(guildId, id, options).ConfigureAwait(false);
             if (model != null)
-                return RestGuildUser.Create(client, new RestGuild(client, guildId), model);
+                return RestGuildUser.Create(client, guild, model);
+
             return null;
         }
 

@@ -169,7 +169,7 @@ namespace Discord.Rest
         public async Task<IReadOnlyCollection<RestTextChannel>> GetTextChannelsAsync(RequestOptions options = null)
         {
             var channels = await GuildHelper.GetChannelsAsync(this, Discord, options).ConfigureAwait(false);
-            return channels.Select(x => x as RestTextChannel).Where(x => x != null).ToImmutableArray();
+            return channels.OfType<RestTextChannel>().ToImmutableArray();
         }
         public async Task<RestVoiceChannel> GetVoiceChannelAsync(ulong id, RequestOptions options = null)
         {
@@ -179,12 +179,12 @@ namespace Discord.Rest
         public async Task<IReadOnlyCollection<RestVoiceChannel>> GetVoiceChannelsAsync(RequestOptions options = null)
         {
             var channels = await GuildHelper.GetChannelsAsync(this, Discord, options).ConfigureAwait(false);
-            return channels.Select(x => x as RestVoiceChannel).Where(x => x != null).ToImmutableArray();
+            return channels.OfType<RestVoiceChannel>().ToImmutableArray();
         }
         public async Task<IReadOnlyCollection<RestCategoryChannel>> GetCategoryChannelsAsync(RequestOptions options = null)
         {
             var channels = await GuildHelper.GetChannelsAsync(this, Discord, options).ConfigureAwait(false);
-            return channels.Select(x => x as RestCategoryChannel).Where(x => x != null).ToImmutableArray();
+            return channels.OfType<RestCategoryChannel>().ToImmutableArray();
         }
 
         public async Task<RestVoiceChannel> GetAFKChannelAsync(RequestOptions options = null)
@@ -223,10 +223,10 @@ namespace Discord.Rest
             }
             return null;
         }
-        public Task<RestTextChannel> CreateTextChannelAsync(string name, RequestOptions options = null)
-            => GuildHelper.CreateTextChannelAsync(this, Discord, name, options);
-        public Task<RestVoiceChannel> CreateVoiceChannelAsync(string name, RequestOptions options = null)
-            => GuildHelper.CreateVoiceChannelAsync(this, Discord, name, options);
+        public Task<RestTextChannel> CreateTextChannelAsync(string name, Action<TextChannelProperties> func = null, RequestOptions options = null)
+            => GuildHelper.CreateTextChannelAsync(this, Discord, name, options, func);
+        public Task<RestVoiceChannel> CreateVoiceChannelAsync(string name, Action<VoiceChannelProperties> func = null, RequestOptions options = null)
+            => GuildHelper.CreateVoiceChannelAsync(this, Discord, name, options, func);
         public Task<RestCategoryChannel> CreateCategoryChannelAsync(string name, RequestOptions options = null)
             => GuildHelper.CreateCategoryChannelAsync(this, Discord, name, options);
 
@@ -239,6 +239,15 @@ namespace Discord.Rest
         //Invites
         public Task<IReadOnlyCollection<RestInviteMetadata>> GetInvitesAsync(RequestOptions options = null)
             => GuildHelper.GetInvitesAsync(this, Discord, options);
+        /// <summary>
+        ///     Gets the vanity invite URL of this guild.
+        /// </summary>
+        /// <param name="options">The options to be used when sending the request.</param>
+        /// <returns>
+        ///     A partial metadata of the vanity invite found within this guild.
+        /// </returns>
+        public Task<RestInviteMetadata> GetVanityInviteAsync(RequestOptions options = null)
+            => GuildHelper.GetVanityInviteAsync(this, Discord, options);
 
         //Roles
         public RestRole GetRole(ulong id)
@@ -384,10 +393,10 @@ namespace Discord.Rest
             else
                 return null;
         }
-        async Task<ITextChannel> IGuild.CreateTextChannelAsync(string name, RequestOptions options)
-            => await CreateTextChannelAsync(name, options).ConfigureAwait(false);
-        async Task<IVoiceChannel> IGuild.CreateVoiceChannelAsync(string name, RequestOptions options)
-            => await CreateVoiceChannelAsync(name, options).ConfigureAwait(false);
+        async Task<ITextChannel> IGuild.CreateTextChannelAsync(string name, Action<TextChannelProperties> func, RequestOptions options)
+            => await CreateTextChannelAsync(name, func, options).ConfigureAwait(false);
+        async Task<IVoiceChannel> IGuild.CreateVoiceChannelAsync(string name, Action<VoiceChannelProperties> func, RequestOptions options)
+            => await CreateVoiceChannelAsync(name, func, options).ConfigureAwait(false);
         async Task<ICategoryChannel> IGuild.CreateCategoryAsync(string name, RequestOptions options)
             => await CreateCategoryChannelAsync(name, options).ConfigureAwait(false);
 
@@ -398,6 +407,9 @@ namespace Discord.Rest
 
         async Task<IReadOnlyCollection<IInviteMetadata>> IGuild.GetInvitesAsync(RequestOptions options)
             => await GetInvitesAsync(options).ConfigureAwait(false);
+        /// <inheritdoc />
+        async Task<IInviteMetadata> IGuild.GetVanityInviteAsync(RequestOptions options)
+            => await GetVanityInviteAsync(options).ConfigureAwait(false);
 
         IRole IGuild.GetRole(ulong id)
             => GetRole(id);
@@ -434,7 +446,7 @@ namespace Discord.Rest
         }
         Task IGuild.DownloadUsersAsync() { throw new NotSupportedException(); }
 
-        async Task<IReadOnlyCollection<IAuditLogEntry>> IGuild.GetAuditLogAsync(int limit, CacheMode cacheMode, RequestOptions options)
+        async Task<IReadOnlyCollection<IAuditLogEntry>> IGuild.GetAuditLogsAsync(int limit, CacheMode cacheMode, RequestOptions options)
         {
             if (cacheMode == CacheMode.AllowDownload)
                 return (await GetAuditLogsAsync(limit, options).FlattenAsync().ConfigureAwait(false)).ToImmutableArray();

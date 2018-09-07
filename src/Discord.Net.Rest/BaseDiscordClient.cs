@@ -55,11 +55,11 @@ namespace Discord.Rest
             await _stateLock.WaitAsync().ConfigureAwait(false);
             try
             {
-                await LoginInternalAsync(tokenType, token).ConfigureAwait(false);
+                await LoginInternalAsync(tokenType, token, validateToken).ConfigureAwait(false);
             }
             finally { _stateLock.Release(); }
         }
-        private async Task LoginInternalAsync(TokenType tokenType, string token)
+        private async Task LoginInternalAsync(TokenType tokenType, string token, bool validateToken)
         {
             if (_isFirstLogin)
             {
@@ -73,11 +73,26 @@ namespace Discord.Rest
 
             try
             {
+                // If token validation is enabled, validate the token and let it throw any ArgumentExceptions
+                // that result from invalid parameters
+                if (validateToken)
+                {
+                    try
+                    {
+                        TokenUtils.ValidateToken(tokenType, token);
+                    }
+                    catch (ArgumentException ex)
+                    {
+                        // log these ArgumentExceptions and allow for the client to attempt to log in anyways
+                        await LogManager.WarningAsync("Discord", "A supplied token was invalid", ex).ConfigureAwait(false);
+                    }
+                }
+
                 await ApiClient.LoginAsync(tokenType, token).ConfigureAwait(false);
                 await OnLoginAsync(tokenType, token).ConfigureAwait(false);
                 LoginState = LoginState.LoggedIn;
             }
-            catch (Exception)
+            catch
             {
                 await LogoutInternalAsync().ConfigureAwait(false);
                 throw;
@@ -148,7 +163,7 @@ namespace Discord.Rest
         Task<IReadOnlyCollection<IConnection>> IDiscordClient.GetConnectionsAsync(RequestOptions options)
             => Task.FromResult<IReadOnlyCollection<IConnection>>(ImmutableArray.Create<IConnection>());
 
-        Task<IInvite> IDiscordClient.GetInviteAsync(string inviteId, bool withCount, RequestOptions options)
+        Task<IInvite> IDiscordClient.GetInviteAsync(string inviteId, RequestOptions options)
             => Task.FromResult<IInvite>(null);
 
         Task<IGuild> IDiscordClient.GetGuildAsync(ulong id, CacheMode mode, RequestOptions options)

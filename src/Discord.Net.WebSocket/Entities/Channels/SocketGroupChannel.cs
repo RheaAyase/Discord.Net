@@ -18,10 +18,10 @@ namespace Discord.WebSocket
     public class SocketGroupChannel : SocketChannel, IGroupChannel, ISocketPrivateChannel, ISocketMessageChannel, ISocketAudioChannel
     {
         private readonly MessageCache _messages;
+        private readonly ConcurrentDictionary<ulong, SocketVoiceState> _voiceStates;
 
         private string _iconId;
         private ConcurrentDictionary<ulong, SocketGroupUser> _users;
-        private ConcurrentDictionary<ulong, SocketVoiceState> _voiceStates;
 
         public string Name { get; private set; }
 
@@ -95,14 +95,19 @@ namespace Discord.WebSocket
         public Task<IReadOnlyCollection<RestMessage>> GetPinnedMessagesAsync(RequestOptions options = null)
             => ChannelHelper.GetPinnedMessagesAsync(this, Discord, options);
 
-        public Task<RestUserMessage> SendMessageAsync(string text, bool isTTS = false, Embed embed = null, RequestOptions options = null)
+        public Task<RestUserMessage> SendMessageAsync(string text = null, bool isTTS = false, Embed embed = null, RequestOptions options = null)
             => ChannelHelper.SendMessageAsync(this, Discord, text, isTTS, embed, options);
-#if FILESYSTEM
+
         public Task<RestUserMessage> SendFileAsync(string filePath, string text, bool isTTS = false, Embed embed = null, RequestOptions options = null)
             => ChannelHelper.SendFileAsync(this, Discord, filePath, text, isTTS, embed, options);
-#endif
+
         public Task<RestUserMessage> SendFileAsync(Stream stream, string filename, string text, bool isTTS = false, Embed embed = null, RequestOptions options = null)
             => ChannelHelper.SendFileAsync(this, Discord, stream, filename, text, isTTS, embed, options);
+
+        public Task DeleteMessageAsync(ulong messageId, RequestOptions options = null)
+            => ChannelHelper.DeleteMessageAsync(this, messageId, Discord, options);
+        public Task DeleteMessageAsync(IMessage message, RequestOptions options = null)
+            => ChannelHelper.DeleteMessageAsync(this, message.Id, Discord, options);
 
         public Task TriggerTypingAsync(RequestOptions options = null)
             => ChannelHelper.TriggerTypingAsync(this, Discord, options);
@@ -124,7 +129,7 @@ namespace Discord.WebSocket
         internal SocketGroupUser GetOrAddUser(UserModel model)
         {
             if (_users.TryGetValue(model.Id, out SocketGroupUser user))
-                return user as SocketGroupUser;
+                return user;
             else
             {
                 var privateUser = SocketGroupUser.Create(this, Discord.State, model);
@@ -138,7 +143,7 @@ namespace Discord.WebSocket
             if (_users.TryRemove(id, out SocketGroupUser user))
             {
                 user.GlobalUser.RemoveRef(Discord);
-                return user as SocketGroupUser;
+                return user;
             }
             return null;
         }
@@ -194,10 +199,10 @@ namespace Discord.WebSocket
             => SocketChannelHelper.GetMessagesAsync(this, Discord, _messages, fromMessage.Id, dir, limit, mode, options);
         async Task<IReadOnlyCollection<IMessage>> IMessageChannel.GetPinnedMessagesAsync(RequestOptions options)
             => await GetPinnedMessagesAsync(options).ConfigureAwait(false);
-#if FILESYSTEM
+
         async Task<IUserMessage> IMessageChannel.SendFileAsync(string filePath, string text, bool isTTS, Embed embed, RequestOptions options)
             => await SendFileAsync(filePath, text, isTTS, embed, options).ConfigureAwait(false);
-#endif
+
         async Task<IUserMessage> IMessageChannel.SendFileAsync(Stream stream, string filename, string text, bool isTTS, Embed embed, RequestOptions options)
             => await SendFileAsync(stream, filename, text, isTTS, embed, options).ConfigureAwait(false);
         async Task<IUserMessage> IMessageChannel.SendMessageAsync(string text, bool isTTS, Embed embed, RequestOptions options)
@@ -206,7 +211,8 @@ namespace Discord.WebSocket
             => EnterTypingState(options);
 
         //IAudioChannel
-        Task<IAudioClient> IAudioChannel.ConnectAsync(Action<IAudioClient> configAction) { throw new NotSupportedException(); }
+        Task<IAudioClient> IAudioChannel.ConnectAsync(bool selfDeaf, bool selfMute, bool external) { throw new NotSupportedException(); }
+        Task IAudioChannel.DisconnectAsync() { throw new NotSupportedException(); }
 
         //IChannel        
         Task<IUser> IChannel.GetUserAsync(ulong id, CacheMode mode, RequestOptions options)
