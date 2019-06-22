@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace Discord.WebSocket
@@ -7,6 +8,21 @@ namespace Discord.WebSocket
     {
         //Channels
         /// <summary> Fired when a channel is created. </summary>
+        /// <remarks>
+        ///     <para>
+        ///         This event is fired when a generic channel has been created. The event handler must return a
+        ///         <see cref="Task"/> and accept a <see cref="SocketChannel"/> as its parameter.
+        ///     </para>
+        ///     <para>
+        ///         The newly created channel is passed into the event handler parameter. The given channel type may
+        ///         include, but not limited to, Private Channels (DM, Group), Guild Channels (Text, Voice, Category);
+        ///         see the derived classes of <see cref="SocketChannel"/> for more details.
+        ///     </para>
+        /// </remarks>
+        /// <example>
+        ///     <code language="cs" region="ChannelCreated"
+        ///           source="..\Discord.Net.Examples\WebSocket\BaseSocketClient.Events.Examples.cs"/>
+        /// </example>
         public event Func<SocketChannel, Task> ChannelCreated 
         {
             add { _channelCreatedEvent.Add(value); }
@@ -14,12 +30,43 @@ namespace Discord.WebSocket
         }
         internal readonly AsyncEvent<Func<SocketChannel, Task>> _channelCreatedEvent = new AsyncEvent<Func<SocketChannel, Task>>();
         /// <summary> Fired when a channel is destroyed. </summary>
+        /// <remarks>
+        ///     <para>
+        ///         This event is fired when a generic channel has been destroyed. The event handler must return a
+        ///         <see cref="Task"/> and accept a <see cref="SocketChannel"/> as its parameter.
+        ///     </para>
+        ///     <para>
+        ///         The destroyed channel is passed into the event handler parameter. The given channel type may
+        ///         include, but not limited to, Private Channels (DM, Group), Guild Channels (Text, Voice, Category);
+        ///         see the derived classes of <see cref="SocketChannel"/> for more details.
+        ///     </para>
+        /// </remarks>
+        /// <example>
+        ///     <code language="cs" region="ChannelDestroyed"
+        ///           source="..\Discord.Net.Examples\WebSocket\BaseSocketClient.Events.Examples.cs"/>
+        /// </example>
         public event Func<SocketChannel, Task> ChannelDestroyed {
             add { _channelDestroyedEvent.Add(value); }
             remove { _channelDestroyedEvent.Remove(value); }
         }
         internal readonly AsyncEvent<Func<SocketChannel, Task>> _channelDestroyedEvent = new AsyncEvent<Func<SocketChannel, Task>>();
         /// <summary> Fired when a channel is updated. </summary>
+        /// <remarks>
+        ///     <para>
+        ///         This event is fired when a generic channel has been destroyed. The event handler must return a
+        ///         <see cref="Task"/> and accept 2 <see cref="SocketChannel"/> as its parameters.
+        ///     </para>
+        ///     <para>
+        ///         The original (prior to update) channel is passed into the first <see cref="SocketChannel"/>, while
+        ///         the updated channel is passed into the second. The given channel type may include, but not limited
+        ///         to, Private Channels (DM, Group), Guild Channels (Text, Voice, Category); see the derived classes of
+        ///         <see cref="SocketChannel"/> for more details.
+        ///     </para>
+        /// </remarks>
+        /// <example>
+        ///     <code language="cs" region="ChannelUpdated"
+        ///           source="..\Discord.Net.Examples\WebSocket\BaseSocketClient.Events.Examples.cs"/>
+        /// </example>
         public event Func<SocketChannel, SocketChannel, Task> ChannelUpdated {
             add { _channelUpdatedEvent.Add(value); }
             remove { _channelUpdatedEvent.Remove(value); }
@@ -28,24 +75,148 @@ namespace Discord.WebSocket
 
         //Messages
         /// <summary> Fired when a message is received. </summary>
+        /// <remarks>
+        ///     <para>
+        ///         This event is fired when a message is received. The event handler must return a
+        ///         <see cref="Task"/> and accept a <see cref="SocketMessage"/> as its parameter.
+        ///     </para>
+        ///     <para>
+        ///         The message that is sent to the client is passed into the event handler parameter as
+        ///         <see cref="SocketMessage"/>. This message may be a system message (i.e.
+        ///         <see cref="SocketSystemMessage"/>) or a user message (i.e. <see cref="SocketUserMessage"/>. See the
+        ///         derived classes of <see cref="SocketMessage"/> for more details.
+        ///     </para>
+        /// </remarks>
+        /// <example>
+        ///     <para>The example below checks if the newly received message contains the target user.</para>
+        ///     <code language="cs" region="MessageReceived"
+        ///           source="..\Discord.Net.Examples\WebSocket\BaseSocketClient.Events.Examples.cs"/>
+        /// </example>
         public event Func<SocketMessage, Task> MessageReceived {
             add { _messageReceivedEvent.Add(value); }
             remove { _messageReceivedEvent.Remove(value); }
         }
         internal readonly AsyncEvent<Func<SocketMessage, Task>> _messageReceivedEvent = new AsyncEvent<Func<SocketMessage, Task>>();
         /// <summary> Fired when a message is deleted. </summary>
+        /// <remarks>
+        ///     <para>
+        ///         This event is fired when a message is deleted. The event handler must return a
+        ///         <see cref="Task"/> and accept a <see cref="Cacheable{TEntity,TId}"/> and 
+        ///         <see cref="ISocketMessageChannel"/> as its parameters.
+        ///     </para>
+        ///     <para>
+        ///         <note type="important">
+        ///             It is not possible to retrieve the message via
+        ///             <see cref="Cacheable{TEntity,TId}.DownloadAsync"/>; the message cannot be retrieved by Discord
+        ///             after the message has been deleted.
+        ///         </note>
+        ///         If caching is enabled via <see cref="DiscordSocketConfig"/>, the
+        ///         <see cref="Cacheable{TEntity,TId}"/> entity will contain the deleted message; otherwise, in event
+        ///         that the message cannot be retrieved, the snowflake ID of the message is preserved in the 
+        ///         <see cref="ulong"/>.
+        ///     </para>
+        ///     <para>
+        ///         The source channel of the removed message will be passed into the 
+        ///         <see cref="ISocketMessageChannel"/> parameter.
+        ///     </para>
+        /// </remarks>
+        /// <example>
+        ///     <code language="cs" region="MessageDeleted"
+        ///           source="..\Discord.Net.Examples\WebSocket\BaseSocketClient.Events.Examples.cs" />
+        /// </example>
         public event Func<Cacheable<IMessage, ulong>, ISocketMessageChannel, Task> MessageDeleted {
             add { _messageDeletedEvent.Add(value); }
             remove { _messageDeletedEvent.Remove(value); }
         }
         internal readonly AsyncEvent<Func<Cacheable<IMessage, ulong>, ISocketMessageChannel, Task>> _messageDeletedEvent = new AsyncEvent<Func<Cacheable<IMessage, ulong>, ISocketMessageChannel, Task>>();
+        /// <summary> Fired when multiple messages are bulk deleted. </summary>
+        /// <remarks>
+        ///     <note>
+        ///         The <see cref="MessageDeleted"/> event will not be fired for individual messages contained in this event.
+        ///     </note>
+        ///     <para>
+        ///         This event is fired when multiple messages are bulk deleted. The event handler must return a
+        ///         <see cref="Task"/> and accept an <see cref="IReadOnlyCollection{Cacheable}"/> and 
+        ///         <see cref="ISocketMessageChannel"/> as its parameters.
+        ///     </para>
+        ///     <para>
+        ///         <note type="important">
+        ///             It is not possible to retrieve the message via
+        ///             <see cref="Cacheable{TEntity,TId}.DownloadAsync"/>; the message cannot be retrieved by Discord
+        ///             after the message has been deleted.
+        ///         </note>
+        ///         If caching is enabled via <see cref="DiscordSocketConfig"/>, the
+        ///         <see cref="Cacheable{TEntity,TId}"/> entity will contain the deleted message; otherwise, in event
+        ///         that the message cannot be retrieved, the snowflake ID of the message is preserved in the 
+        ///         <see cref="ulong"/>.
+        ///     </para>
+        ///     <para>
+        ///         The source channel of the removed message will be passed into the 
+        ///         <see cref="ISocketMessageChannel"/> parameter.
+        ///     </para>
+        /// </remarks>
+        public event Func<IReadOnlyCollection<Cacheable<IMessage, ulong>>, ISocketMessageChannel, Task> MessagesBulkDeleted
+        {
+            add { _messagesBulkDeletedEvent.Add(value); }
+            remove { _messagesBulkDeletedEvent.Remove(value); }
+        }
+        internal readonly AsyncEvent<Func<IReadOnlyCollection<Cacheable<IMessage, ulong>>, ISocketMessageChannel, Task>> _messagesBulkDeletedEvent = new AsyncEvent<Func<IReadOnlyCollection<Cacheable<IMessage, ulong>>, ISocketMessageChannel, Task>>();
         /// <summary> Fired when a message is updated. </summary>
+        /// <remarks>
+        ///     <para>
+        ///         This event is fired when a message is updated. The event handler must return a
+        ///         <see cref="Task"/> and accept a <see cref="Cacheable{TEntity,TId}"/>, <see cref="SocketMessage"/>,
+        ///         and <see cref="ISocketMessageChannel"/> as its parameters.
+        ///     </para>
+        ///     <para>
+        ///         If caching is enabled via <see cref="DiscordSocketConfig"/>, the
+        ///         <see cref="Cacheable{TEntity,TId}"/> entity will contain the original message; otherwise, in event
+        ///         that the message cannot be retrieved, the snowflake ID of the message is preserved in the 
+        ///         <see cref="ulong"/>.
+        ///     </para>
+        ///     <para>
+        ///         The updated message will be passed into the <see cref="SocketMessage"/> parameter.
+        ///     </para>
+        ///     <para>
+        ///         The source channel of the updated message will be passed into the 
+        ///         <see cref="ISocketMessageChannel"/> parameter.
+        ///     </para>
+        /// </remarks>
         public event Func<Cacheable<IMessage, ulong>, SocketMessage, ISocketMessageChannel, Task> MessageUpdated {
             add { _messageUpdatedEvent.Add(value); }
             remove { _messageUpdatedEvent.Remove(value); }
         }
         internal readonly AsyncEvent<Func<Cacheable<IMessage, ulong>, SocketMessage, ISocketMessageChannel, Task>> _messageUpdatedEvent = new AsyncEvent<Func<Cacheable<IMessage, ulong>, SocketMessage, ISocketMessageChannel, Task>>();
         /// <summary> Fired when a reaction is added to a message. </summary>
+        /// <remarks>
+        ///     <para>
+        ///         This event is fired when a reaction is added to a user message. The event handler must return a
+        ///         <see cref="Task"/> and accept a <see cref="Cacheable{TEntity,TId}"/>, an 
+        ///         <see cref="ISocketMessageChannel"/>, and a <see cref="SocketReaction"/> as its parameter.
+        ///     </para>
+        ///     <para>
+        ///         If caching is enabled via <see cref="DiscordSocketConfig"/>, the
+        ///         <see cref="Cacheable{TEntity,TId}"/> entity will contain the original message; otherwise, in event
+        ///         that the message cannot be retrieved, the snowflake ID of the message is preserved in the 
+        ///         <see cref="ulong"/>.
+        ///     </para>
+        ///     <para>
+        ///         The source channel of the reaction addition will be passed into the 
+        ///         <see cref="ISocketMessageChannel"/> parameter.
+        ///     </para>
+        ///     <para>
+        ///         The reaction that was added will be passed into the <see cref="SocketReaction"/> parameter.
+        ///     </para>
+        ///     <note>
+        ///         When fetching the reaction from this event, a user may not be provided under 
+        ///         <see cref="SocketReaction.User"/>. Please see the documentation of the property for more
+        ///         information.
+        ///     </note>
+        /// </remarks>
+        /// <example>
+        ///     <code language="cs" region="ReactionAdded"
+        ///           source="..\Discord.Net.Examples\WebSocket\BaseSocketClient.Events.Examples.cs"/>
+        /// </example>
         public event Func<Cacheable<IUserMessage, ulong>, ISocketMessageChannel, SocketReaction, Task> ReactionAdded {
             add { _reactionAddedEvent.Add(value); }
             remove { _reactionAddedEvent.Remove(value); }

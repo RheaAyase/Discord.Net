@@ -8,32 +8,47 @@ using Model = Discord.API.Message;
 
 namespace Discord.Rest
 {
+    /// <summary>
+    ///     Represents a REST-based message sent by a user.
+    /// </summary>
     [DebuggerDisplay(@"{DebuggerDisplay,nq}")]
     public class RestUserMessage : RestMessage, IUserMessage
     {
-        private bool _isMentioningEveryone, _isTTS, _isPinned;
+        private bool _isMentioningEveryone, _isTTS, _isPinned, _isSuppressed;
         private long? _editedTimestampTicks;
-        private ImmutableArray<Attachment> _attachments;
-        private ImmutableArray<Embed> _embeds;
-        private ImmutableArray<ITag> _tags;
-        private ImmutableArray<RestReaction> _reactions;
-        
+        private ImmutableArray<Attachment> _attachments = ImmutableArray.Create<Attachment>();
+        private ImmutableArray<Embed> _embeds = ImmutableArray.Create<Embed>();
+        private ImmutableArray<ITag> _tags = ImmutableArray.Create<ITag>();
+        private ImmutableArray<RestReaction> _reactions = ImmutableArray.Create<RestReaction>();
+
+        /// <inheritdoc />
         public override bool IsTTS => _isTTS;
+        /// <inheritdoc />
         public override bool IsPinned => _isPinned;
+        /// <inheritdoc />
+        public override bool IsSuppressed => _isSuppressed;
+        /// <inheritdoc />
         public override DateTimeOffset? EditedTimestamp => DateTimeUtils.FromTicks(_editedTimestampTicks);
+        /// <inheritdoc />
         public override IReadOnlyCollection<Attachment> Attachments => _attachments;
+        /// <inheritdoc />
         public override IReadOnlyCollection<Embed> Embeds => _embeds;
+        /// <inheritdoc />
         public override IReadOnlyCollection<ulong> MentionedChannelIds => MessageHelper.FilterTagsByKey(TagType.ChannelMention, _tags);
+        /// <inheritdoc />
         public override IReadOnlyCollection<ulong> MentionedRoleIds => MessageHelper.FilterTagsByKey(TagType.RoleMention, _tags);
+        /// <inheritdoc />
         public override IReadOnlyCollection<RestUser> MentionedUsers => MessageHelper.FilterTagsByValue<RestUser>(TagType.UserMention, _tags);
+        /// <inheritdoc />
         public override IReadOnlyCollection<ITag> Tags => _tags;
+        /// <inheritdoc />
         public IReadOnlyDictionary<IEmote, ReactionMetadata> Reactions => _reactions.ToDictionary(x => x.Emote, x => new ReactionMetadata { ReactionCount = x.Count, IsMe = x.Me });
 
         internal RestUserMessage(BaseDiscordClient discord, ulong id, IMessageChannel channel, IUser author, MessageSource source)
             : base(discord, id, channel, author, source)
         {
         }
-        internal static new RestUserMessage Create(BaseDiscordClient discord, IMessageChannel channel, IUser author, Model model)
+        internal new static RestUserMessage Create(BaseDiscordClient discord, IMessageChannel channel, IUser author, Model model)
         {
             var entity = new RestUserMessage(discord, model.Id, channel, author, MessageHelper.GetSource(model));
             entity.Update(model);
@@ -52,6 +67,10 @@ namespace Discord.Rest
                 _editedTimestampTicks = model.EditedTimestamp.Value?.UtcTicks;
             if (model.MentionEveryone.IsSpecified)
                 _isMentioningEveryone = model.MentionEveryone.Value;
+            if (model.Flags.IsSpecified)
+            {
+                _isSuppressed = model.Flags.Value.HasFlag(API.MessageFlags.Suppressed);
+            }
 
             if (model.Attachments.IsSpecified)
             {
@@ -124,30 +143,43 @@ namespace Discord.Rest
             }
         }
 
+        /// <inheritdoc />
         public async Task ModifyAsync(Action<MessageProperties> func, RequestOptions options = null)
         {
             var model = await MessageHelper.ModifyAsync(this, Discord, func, options).ConfigureAwait(false);
             Update(model);
         }
 
+        /// <inheritdoc />
         public Task AddReactionAsync(IEmote emote, RequestOptions options = null)
             => MessageHelper.AddReactionAsync(this, emote, Discord, options);
+        /// <inheritdoc />
         public Task RemoveReactionAsync(IEmote emote, IUser user, RequestOptions options = null)
-            => MessageHelper.RemoveReactionAsync(this, user, emote, Discord, options);
+            => MessageHelper.RemoveReactionAsync(this, user.Id, emote, Discord, options);
+        /// <inheritdoc />
+        public Task RemoveReactionAsync(IEmote emote, ulong userId, RequestOptions options = null)
+            => MessageHelper.RemoveReactionAsync(this, userId, emote, Discord, options);
+        /// <inheritdoc />
         public Task RemoveAllReactionsAsync(RequestOptions options = null)
             => MessageHelper.RemoveAllReactionsAsync(this, Discord, options);
+        /// <inheritdoc />
         public IAsyncEnumerable<IReadOnlyCollection<IUser>> GetReactionUsersAsync(IEmote emote, int limit, RequestOptions options = null)
             => MessageHelper.GetReactionUsersAsync(this, emote, limit, Discord, options);
 
-
+        /// <inheritdoc />
         public Task PinAsync(RequestOptions options = null)
             => MessageHelper.PinAsync(this, Discord, options);
+        /// <inheritdoc />
         public Task UnpinAsync(RequestOptions options = null)
             => MessageHelper.UnpinAsync(this, Discord, options);
+        /// <inheritdoc />
+        public Task ModifySuppressionAsync(bool suppressEmbeds, RequestOptions options = null)
+            => MessageHelper.SuppressEmbedsAsync(this, Discord, suppressEmbeds, options);
 
         public string Resolve(int startIndex, TagHandling userHandling = TagHandling.Name, TagHandling channelHandling = TagHandling.Name,
             TagHandling roleHandling = TagHandling.Name, TagHandling everyoneHandling = TagHandling.Ignore, TagHandling emojiHandling = TagHandling.Name)
             => MentionUtils.Resolve(this, startIndex, userHandling, channelHandling, roleHandling, everyoneHandling, emojiHandling);
+        /// <inheritdoc />
         public string Resolve(TagHandling userHandling = TagHandling.Name, TagHandling channelHandling = TagHandling.Name,
             TagHandling roleHandling = TagHandling.Name, TagHandling everyoneHandling = TagHandling.Ignore, TagHandling emojiHandling = TagHandling.Name)
             => MentionUtils.Resolve(this, 0, userHandling, channelHandling, roleHandling, everyoneHandling, emojiHandling);

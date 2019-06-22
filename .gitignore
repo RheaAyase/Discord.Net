@@ -15,8 +15,6 @@
 [Dd]ebugPublic/
 [Rr]elease/
 [Rr]eleases/
-x64/
-x86/
 build/
 bld/
 [Bb]in/
@@ -206,3 +204,6 @@ project.lock.json
 docs/api/\.manifest
 
 \.idea/
+
+# Codealike UID
+codealike.json

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Text;
@@ -53,11 +53,27 @@ namespace Discord.Commands
                 else
                     c = '\0';
 
+                //If we're processing an remainder parameter, ignore all other logic
+                if (curParam != null && curParam.IsRemainder && curPos != endPos)
+                {
+                    argBuilder.Append(c);
+                    continue;
+                }
+
                 //If this character is escaped, skip it
                 if (isEscaping)
                 {
                     if (curPos != endPos)
                     {
+                        // if this character matches the quotation mark of the end of the string
+                        // means that it should be escaped
+                        // but if is not, then there is no reason to escape it then
+                        if (c != matchQuote)
+                        {
+                            // if no reason to escape the next character, then re-add \ to the arg
+                            argBuilder.Append('\\');
+                        }
+
                         argBuilder.Append(c);
                         isEscaping = false;
                         continue;
@@ -67,13 +83,6 @@ namespace Discord.Commands
                 if (c == '\\' && (curParam == null || !curParam.IsRemainder))
                 {
                     isEscaping = true;
-                    continue;
-                }
-
-                //If we're processing an remainder parameter, ignore all other logic
-                if (curParam != null && curParam.IsRemainder && curPos != endPos)
-                {
-                    argBuilder.Append(c);
                     continue;
                 }
 
@@ -170,7 +179,7 @@ namespace Discord.Commands
             if (isEscaping)
                 return ParseResult.FromError(CommandError.ParseFailed, "Input text may not end on an incomplete escape.");
             if (curPart == ParserPart.QuotedParameter)
-                return ParseResult.FromError(CommandError.ParseFailed, "A quoted parameter is incomplete");
+                return ParseResult.FromError(CommandError.ParseFailed, "A quoted parameter is incomplete.");
             
             //Add missing optionals
             for (int i = argList.Count; i < command.Parameters.Count; i++)

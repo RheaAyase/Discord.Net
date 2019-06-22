@@ -12,11 +12,12 @@ namespace Discord.Webhook
 {
     internal static class WebhookClientHelper
     {
+        /// <exception cref="InvalidOperationException">Could not find a webhook with the supplied credentials.</exception>
         public static async Task<RestInternalWebhook> GetWebhookAsync(DiscordWebhookClient client, ulong webhookId)
         {
-            var model = await client.ApiClient.GetWebhookAsync(webhookId);
+            var model = await client.ApiClient.GetWebhookAsync(webhookId).ConfigureAwait(false);
             if (model == null)
-                throw new InvalidOperationException("Could not find a webhook for the supplied credentials.");
+                throw new InvalidOperationException("Could not find a webhook with the supplied credentials.");
             return RestInternalWebhook.Create(client, model);
         }
         public static async Task<ulong> SendMessageAsync(DiscordWebhookClient client,
@@ -34,16 +35,16 @@ namespace Discord.Webhook
             return model.Id;
         }
         public static async Task<ulong> SendFileAsync(DiscordWebhookClient client, string filePath, string text, bool isTTS, 
-            IEnumerable<Embed> embeds, string username, string avatarUrl, RequestOptions options)
+            IEnumerable<Embed> embeds, string username, string avatarUrl, RequestOptions options, bool isSpoiler)
         {
             string filename = Path.GetFileName(filePath);
             using (var file = File.OpenRead(filePath))
-                return await SendFileAsync(client, file, filename, text, isTTS, embeds, username, avatarUrl, options).ConfigureAwait(false);
+                return await SendFileAsync(client, file, filename, text, isTTS, embeds, username, avatarUrl, options, isSpoiler).ConfigureAwait(false);
         }
         public static async Task<ulong> SendFileAsync(DiscordWebhookClient client, Stream stream, string filename, string text, bool isTTS,
-            IEnumerable<Embed> embeds, string username, string avatarUrl, RequestOptions options)
+            IEnumerable<Embed> embeds, string username, string avatarUrl, RequestOptions options, bool isSpoiler)
         {
-            var args = new UploadWebhookFileParams(stream) { Filename = filename, Content = text, IsTTS = isTTS };
+            var args = new UploadWebhookFileParams(stream) { Filename = filename, Content = text, IsTTS = isTTS, IsSpoiler = isSpoiler };
             if (username != null)
                 args.Username = username;
             if (avatarUrl != null)

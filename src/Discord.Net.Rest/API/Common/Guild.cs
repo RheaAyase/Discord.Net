@@ -1,4 +1,4 @@
-﻿#pragma warning disable CS1591
+#pragma warning disable CS1591
 using Newtonsoft.Json;
 
 namespace Discord.API
@@ -25,10 +25,12 @@ namespace Discord.API
         public bool EmbedEnabled { get; set; }
         [JsonProperty("embed_channel_id")]
         public ulong? EmbedChannelId { get; set; }
-        [JsonProperty("system_channel_id")]
-        public ulong? SystemChannelId { get; set; }
         [JsonProperty("verification_level")]
         public VerificationLevel VerificationLevel { get; set; }
+        [JsonProperty("default_message_notifications")]
+        public DefaultMessageNotifications DefaultMessageNotifications { get; set; }
+        [JsonProperty("explicit_content_filter")]
+        public ExplicitContentFilterLevel ExplicitContentFilter { get; set; }
         [JsonProperty("voice_states")]
         public VoiceState[] VoiceStates { get; set; }
         [JsonProperty("roles")]
@@ -39,7 +41,22 @@ namespace Discord.API
         public string[] Features { get; set; }
         [JsonProperty("mfa_level")]
         public MfaLevel MfaLevel { get; set; }
-        [JsonProperty("default_message_notifications")]
-        public DefaultMessageNotifications DefaultMessageNotifications { get; set; }
+        [JsonProperty("application_id")]
+        public ulong? ApplicationId { get; set; }
+        [JsonProperty("system_channel_id")]
+        public ulong? SystemChannelId { get; set; }
+        [JsonProperty("premium_tier")]
+        public PremiumTier PremiumTier { get; set; }
+        [JsonProperty("vanity_url_code")]
+        public string VanityURLCode { get; set; }
+        [JsonProperty("banner")]
+        public string Banner { get; set; }
+        [JsonProperty("description")]
+        public string Description { get; set; }
+        // this value is inverted, flags set will turn OFF features
+        [JsonProperty("system_channel_flags")]
+        public SystemChannelMessageDeny SystemChannelFlags { get; set; }
+        [JsonProperty("premium_subscription_count")]
+        public int? PremiumSubscriptionCount { get; set; }
     }
 }

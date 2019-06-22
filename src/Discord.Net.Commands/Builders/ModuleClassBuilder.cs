@@ -34,7 +34,7 @@ namespace Discord.Commands
                 }
                 else if (IsLoadableModule(typeInfo))
                 {
-                    await service._cmdLogger.WarningAsync($"Class {typeInfo.FullName} is not public and cannot be loaded. To suppress this message, mark the class with {nameof(DontAutoLoadAttribute)}.");
+                    await service._cmdLogger.WarningAsync($"Class {typeInfo.FullName} is not public and cannot be loaded. To suppress this message, mark the class with {nameof(DontAutoLoadAttribute)}.").ConfigureAwait(false);
                 }
             }
 
@@ -280,7 +280,7 @@ namespace Discord.Commands
             }
         }
 
-        private static TypeReader GetTypeReader(CommandService service, Type paramType, Type typeReaderType, IServiceProvider services)
+        internal static TypeReader GetTypeReader(CommandService service, Type paramType, Type typeReaderType, IServiceProvider services)
         {
             var readers = service.GetTypeReaders(paramType);
             TypeReader reader = null;

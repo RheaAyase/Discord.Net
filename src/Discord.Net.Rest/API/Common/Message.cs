@@ -44,5 +44,13 @@ namespace Discord.API
         public Optional<bool> Pinned { get; set; }
         [JsonProperty("reactions")]
         public Optional<Reaction[]> Reactions { get; set; }
+        // sent with Rich Presence-related chat embeds
+        [JsonProperty("activity")]
+        public Optional<MessageActivity> Activity { get; set; }
+        // sent with Rich Presence-related chat embeds
+        [JsonProperty("application")]
+        public Optional<MessageApplication> Application { get; set; }
+        [JsonProperty("flags")]
+        public Optional<MessageFlags> Flags { get; set; }
     }
 }

@@ -10,14 +10,17 @@ namespace Discord.Rest
 {
     internal static class MessageHelper
     {
+        /// <exception cref="InvalidOperationException">Only the author of a message may modify the message.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">Message content is too long, length must be less or equal to <see cref="DiscordConfig.MaxMessageSize"/>.</exception>
         public static async Task<Model> ModifyAsync(IMessage msg, BaseDiscordClient client, Action<MessageProperties> func,
             RequestOptions options)
         {
             if (msg.Author.Id != client.CurrentUser.Id)
-                throw new InvalidOperationException("Only the author of a message may change it.");
+                throw new InvalidOperationException("Only the author of a message may modify the message.");
 
             var args = new MessageProperties();
             func(args);
+
             var apiArgs = new API.Rest.ModifyMessageParams
             {
                 Content = args.Content,
@@ -38,19 +41,28 @@ namespace Discord.Rest
             await client.ApiClient.DeleteMessageAsync(channelId, msgId, options).ConfigureAwait(false);
         }
 
+        public static async Task SuppressEmbedsAsync(IMessage msg, BaseDiscordClient client, bool suppress, RequestOptions options)
+        {
+            var apiArgs = new API.Rest.SuppressEmbedParams
+            {
+                Suppressed = suppress
+            };
+            await client.ApiClient.SuppressEmbedAsync(msg.Channel.Id, msg.Id, apiArgs, options).ConfigureAwait(false);
+        }
+
         public static async Task AddReactionAsync(IMessage msg, IEmote emote, BaseDiscordClient client, RequestOptions options)
         {
             await client.ApiClient.AddReactionAsync(msg.Channel.Id, msg.Id, emote is Emote e ? $"{e.Name}:{e.Id}" : emote.Name, options).ConfigureAwait(false);
         }
 
-        public static async Task RemoveReactionAsync(IMessage msg, IUser user, IEmote emote, BaseDiscordClient client, RequestOptions options)
+        public static async Task RemoveReactionAsync(IMessage msg, ulong userId, IEmote emote, BaseDiscordClient client, RequestOptions options)
         {
-            await client.ApiClient.RemoveReactionAsync(msg.Channel.Id, msg.Id, user.Id, emote is Emote e ? $"{e.Name}:{e.Id}" : emote.Name, options).ConfigureAwait(false);
+            await client.ApiClient.RemoveReactionAsync(msg.Channel.Id, msg.Id, userId, emote is Emote e ? $"{e.Name}:{e.Id}" : emote.Name, options).ConfigureAwait(false);
         }
 
         public static async Task RemoveAllReactionsAsync(IMessage msg, BaseDiscordClient client, RequestOptions options)
         {
-            await client.ApiClient.RemoveAllReactionsAsync(msg.Channel.Id, msg.Id, options);
+            await client.ApiClient.RemoveAllReactionsAsync(msg.Channel.Id, msg.Id, options).ConfigureAwait(false);
         }
 
         public static IAsyncEnumerable<IReadOnlyCollection<IUser>> GetReactionUsersAsync(IMessage msg, IEmote emote,
@@ -76,7 +88,7 @@ namespace Discord.Rest
                 },
                 nextPage: (info, lastPage) =>
                 {
-                    if (lastPage.Count != DiscordConfig.MaxUsersPerBatch)
+                    if (lastPage.Count != DiscordConfig.MaxUserReactionsPerBatch)
                         return false;
 
                     info.Position = lastPage.Max(x => x.Id);
@@ -155,10 +167,9 @@ namespace Discord.Rest
             {
                 index = text.IndexOf("@everyone", index);
                 if (index == -1) break;
-
                 var tagIndex = FindIndex(tags, index);
                 if (tagIndex.HasValue)
-                    tags.Insert(tagIndex.Value, new Tag<object>(TagType.EveryoneMention, index, "@everyone".Length, 0, null));
+                    tags.Insert(tagIndex.Value, new Tag<IRole>(TagType.EveryoneMention, index, "@everyone".Length, 0, guild?.EveryoneRole));
                 index++;
             }
 
@@ -167,10 +178,9 @@ namespace Discord.Rest
             {
                 index = text.IndexOf("@here", index);
                 if (index == -1) break;
-
                 var tagIndex = FindIndex(tags, index);
                 if (tagIndex.HasValue)
-                    tags.Insert(tagIndex.Value, new Tag<object>(TagType.HereMention, index, "@here".Length, 0, null));
+                    tags.Insert(tagIndex.Value, new Tag<IRole>(TagType.HereMention, index, "@here".Length, 0, guild?.EveryoneRole));
                 index++;
             }
 

@@ -10,12 +10,17 @@ namespace Discord.Rest
     {
         private string _iconId;
 
+        /// <inheritdoc />
         public string Name { get; private set; }
+        /// <inheritdoc />
         public bool IsOwner { get; private set; }
+        /// <inheritdoc />
         public GuildPermissions Permissions { get; private set; }
 
+        /// <inheritdoc />
         public DateTimeOffset CreatedAt => SnowflakeUtils.FromSnowflake(Id);
         public bool Deleted{ get; set; }
+        /// <inheritdoc />
         public string IconUrl => CDN.GetGuildIconUrl(Id, _iconId);
 
         internal RestUserGuild(BaseDiscordClient discord, ulong id)
@@ -41,6 +46,7 @@ namespace Discord.Rest
         {
             await Discord.ApiClient.LeaveGuildAsync(Id, options).ConfigureAwait(false);
         }
+        /// <inheritdoc />
         public async Task DeleteAsync(RequestOptions options = null)
         {
             await Discord.ApiClient.DeleteGuildAsync(Id, options).ConfigureAwait(false);
