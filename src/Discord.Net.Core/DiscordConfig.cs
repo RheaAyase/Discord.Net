@@ -36,7 +36,7 @@ namespace Discord
             typeof(DiscordConfig).GetTypeInfo().Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion ??
             typeof(DiscordConfig).GetTypeInfo().Assembly.GetName().Version.ToString(3) ??
             "Unknown";
-        
+
         /// <summary>
         ///     Gets the user agent that Discord.Net uses in its clients.
         /// </summary>
@@ -123,7 +123,7 @@ namespace Discord
         ///     The currently set <see cref="RetryMode"/>.
         /// </returns>
         public RetryMode DefaultRetryMode { get; set; } = RetryMode.AlwaysRetry;
-        
+
         /// <summary>
         ///     Gets or sets the minimum log level severity that will be sent to the Log event.
         /// </summary>
@@ -140,5 +140,35 @@ namespace Discord
         ///     the API version it uses on startup.
         /// </remarks>
         internal bool DisplayInitialLog { get; set; } = true;
+
+        /// <summary>
+        ///     Gets or sets the level of precision of the rate limit reset response.
+        /// </summary>
+        /// <remarks>
+        ///     If set to <see cref="RateLimitPrecision.Second"/>, this value will be rounded up to the
+        ///     nearest second.
+        /// </remarks>
+        /// <returns>
+        ///     The currently set <see cref="RateLimitPrecision"/>.
+        /// </returns>
+        public RateLimitPrecision RateLimitPrecision { get; set; } = RateLimitPrecision.Millisecond;
+
+		/// <summary>
+		/// 	Gets or sets whether or not rate-limits should use the system clock.
+		/// </summary>
+		/// <remarks>
+		///		If set to <c>false</c>, we will use the X-RateLimit-Reset-After header
+		///		to determine when a rate-limit expires, rather than comparing the
+		///		X-RateLimit-Reset timestamp to the system time.
+		///
+		///		This should only be changed to false if the system is known to have
+		/// 	a clock that is out of sync. Relying on the Reset-After header will
+		///		incur network lag.
+		///
+		///		Regardless of this property, we still rely on the system's wall-clock
+		///		to determine if a bucket is rate-limited; we do not use any monotonic
+		///		clock. Your system will still need a stable clock.
+		/// </remarks>
+		public bool UseSystemClock { get; set; } = true;
     }
 }

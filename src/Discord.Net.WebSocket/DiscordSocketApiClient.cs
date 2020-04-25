@@ -38,8 +38,10 @@ namespace Discord.API
         public ConnectionState ConnectionState { get; private set; }
 
         public DiscordSocketApiClient(RestClientProvider restClientProvider, WebSocketProvider webSocketProvider, string userAgent,
-            string url = null, RetryMode defaultRetryMode = RetryMode.AlwaysRetry, JsonSerializer serializer = null)
-            : base(restClientProvider, userAgent, defaultRetryMode, serializer)
+            string url = null, RetryMode defaultRetryMode = RetryMode.AlwaysRetry, JsonSerializer serializer = null,
+            RateLimitPrecision rateLimitPrecision = RateLimitPrecision.Second,
+			bool useSystemClock = true)
+            : base(restClientProvider, userAgent, defaultRetryMode, serializer, rateLimitPrecision, useSystemClock)
         {
             _gatewayUrl = url;
             if (url != null)
@@ -162,26 +164,17 @@ namespace Discord.API
             }
         }
 
-        public async Task DisconnectAsync()
+        public async Task DisconnectAsync(Exception ex = null)
         {
             await _stateLock.WaitAsync().ConfigureAwait(false);
             try
             {
-                await DisconnectInternalAsync().ConfigureAwait(false);
-            }
-            finally { _stateLock.Release(); }
-        }
-        public async Task DisconnectAsync(Exception ex)
-        {
-            await _stateLock.WaitAsync().ConfigureAwait(false);
-            try
-            {
-                await DisconnectInternalAsync().ConfigureAwait(false);
+                await DisconnectInternalAsync(ex).ConfigureAwait(false);
             }
             finally { _stateLock.Release(); }
         }
         /// <exception cref="NotSupportedException">This client is not configured with WebSocket support.</exception>
-        internal override async Task DisconnectInternalAsync()
+        internal override async Task DisconnectInternalAsync(Exception ex = null)
         {
             if (WebSocketClient == null)
                 throw new NotSupportedException("This client is not configured with WebSocket support.");
@@ -192,6 +185,9 @@ namespace Discord.API
             try { _connectCancelToken?.Cancel(false); }
             catch { }
 
+            if (ex is GatewayReconnectException)
+                await WebSocketClient.DisconnectAsync(4000);
+            else
             await WebSocketClient.DisconnectAsync().ConfigureAwait(false);
 
             ConnectionState = ConnectionState.Disconnected;
@@ -212,7 +208,8 @@ namespace Discord.API
             await RequestQueue.SendAsync(new WebSocketRequest(WebSocketClient, null, bytes, true, options)).ConfigureAwait(false);
             await _sentGatewayMessageEvent.InvokeAsync(opCode).ConfigureAwait(false);
         }
-        public async Task SendIdentifyAsync(int largeThreshold = 100, int shardID = 0, int totalShards = 1, RequestOptions options = null)
+
+        public async Task SendIdentifyAsync(int largeThreshold = 100, int shardID = 0, int totalShards = 1, bool guildSubscriptions = true, RequestOptions options = null)
         {
             options = RequestOptions.CreateOrClone(options);
             var props = new Dictionary<string, string>
@@ -223,7 +220,8 @@ namespace Discord.API
             {
                 Token = AuthToken,
                 Properties = props,
-                LargeThreshold = largeThreshold
+                LargeThreshold = largeThreshold,
+                GuildSubscriptions = guildSubscriptions
             };
             if (totalShards > 1)
                 msg.ShardingParams = new int[] { shardID, totalShards };

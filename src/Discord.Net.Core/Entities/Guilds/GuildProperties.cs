@@ -1,3 +1,5 @@
+using System.Globalization;
+
 namespace Discord
 {
     /// <summary>
@@ -35,6 +37,10 @@ namespace Discord
         ///     Gets or sets the icon of the guild.
         /// </summary>
         public Optional<Image?> Icon { get; set; }
+        /// <summary>
+        ///     Gets or sets the banner of the guild.
+        /// </summary>
+        public Optional<Image?> Banner { get; set; }
         /// <summary>
         ///     Gets or sets the guild's splash image.
         /// </summary>
@@ -84,5 +90,23 @@ namespace Discord
         ///     are enabled, without the need to manipulate the logic of the flag.
         /// </remarks>
         public Optional<SystemChannelMessageDeny> SystemChannelFlags { get; set; }
+        /// <summary>
+        ///     Gets or sets the preferred locale of the guild in IETF BCP 47 language tag format.
+        /// </summary>
+        /// <remarks>
+        ///     This property takes precedence over <see cref="PreferredCulture"/>.
+        ///     When it is set, the value of <see cref="PreferredCulture"/>
+        ///     will not be used.
+        /// </remarks>
+        public Optional<string> PreferredLocale { get; set; }
+        /// <summary>
+        ///     Gets or sets the preferred locale of the guild.
+        /// </summary>
+        /// <remarks>
+        ///     The <see cref="PreferredLocale"/> property takes precedence
+        ///     over this property. When <see cref="PreferredLocale"/> is set,
+        ///     the value of <see cref="PreferredCulture"/> will be unused.
+        /// </remarks>
+        public Optional<CultureInfo> PreferredCulture { get; set; }
     }
 }

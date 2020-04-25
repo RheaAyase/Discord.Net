@@ -85,7 +85,8 @@ namespace Discord.WebSocket
             }
         }
         private static API.DiscordSocketApiClient CreateApiClient(DiscordSocketConfig config)
-            => new API.DiscordSocketApiClient(config.RestClientProvider, config.WebSocketProvider, DiscordRestConfig.UserAgent);
+            => new API.DiscordSocketApiClient(config.RestClientProvider, config.WebSocketProvider, DiscordRestConfig.UserAgent,
+                rateLimitPrecision: config.RateLimitPrecision);
 
         internal override async Task OnLoginAsync(TokenType tokenType, string token)
         {
@@ -388,8 +389,11 @@ namespace Discord.WebSocket
             {
                 if (disposing)
                 {
-                    foreach (var client in _shards)
-                        client?.Dispose();
+                    if (_shards != null)
+                    {
+                        foreach (var client in _shards)
+                            client?.Dispose();
+                    }
                     _connectionGroupLock?.Dispose();
                 }
 

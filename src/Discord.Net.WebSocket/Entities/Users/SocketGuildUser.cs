@@ -55,6 +55,8 @@ namespace Discord.WebSocket
         /// <inheritdoc />
         public bool IsMuted => VoiceState?.IsMuted ?? false;
         /// <inheritdoc />
+        public bool IsStreaming => VoiceState?.IsStreaming ?? false;
+        /// <inheritdoc />
         public DateTimeOffset? JoinedAt => DateTimeUtils.FromTicks(_joinedAtTicks);
         /// <summary>
         ///     Returns a collection of roles that the user possesses.

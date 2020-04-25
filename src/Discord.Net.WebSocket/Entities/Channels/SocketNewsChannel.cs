@@ -9,6 +9,11 @@ namespace Discord.WebSocket
     /// <summary>
     ///     Represents a WebSocket-based news channel in a guild that has the same properties as a <see cref="SocketTextChannel"/>.
     /// </summary>
+    /// <remarks>
+    ///     <note type="warning">
+    ///         The <see cref="SlowModeInterval"/> property is not supported for news channels.
+    ///     </note>
+    /// </remarks>
     [DebuggerDisplay(@"{DebuggerDisplay,nq}")]
     public class SocketNewsChannel : SocketTextChannel
     {
@@ -22,31 +27,13 @@ namespace Discord.WebSocket
             entity.Update(state, model);
             return entity;
         }
+        /// <inheritdoc />
+        /// <remarks>
+        ///     <note type="important">
+        ///     This property is not supported by this type. Attempting to use this property will result in a <see cref="NotSupportedException"/>.
+        ///     </note>
+        /// </remarks>
         public override int SlowModeInterval
-        {
-            get { throw new NotSupportedException("News channels do not support Slow Mode."); }
-        }
-        public override Task AddPermissionOverwriteAsync(IRole role, OverwritePermissions permissions, RequestOptions options = null)
-        {
-            throw new NotSupportedException("News channels do not support Overwrite Permissions.");
-        }
-        public override Task AddPermissionOverwriteAsync(IUser user, OverwritePermissions permissions, RequestOptions options = null)
-        {
-            throw new NotSupportedException("News channels do not support Overwrite Permissions.");
-        }
-        public override IReadOnlyCollection<Overwrite> PermissionOverwrites
-            => throw new NotSupportedException("News channels do not support Overwrite Permissions.");
-        public override Task SyncPermissionsAsync(RequestOptions options = null)
-        {
-            throw new NotSupportedException("News channels do not support Overwrite Permissions.");
-        }
-        public override Task RemovePermissionOverwriteAsync(IRole role, RequestOptions options = null)
-        {
-            throw new NotSupportedException("News channels do not support Overwrite Permissions.");
-        }
-        public override Task RemovePermissionOverwriteAsync(IUser user, RequestOptions options = null)
-        {
-            throw new NotSupportedException("News channels do not support Overwrite Permissions.");
-        }
+            => throw new NotSupportedException("News channels do not support Slow Mode.");
     }
 }

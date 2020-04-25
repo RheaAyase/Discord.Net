@@ -22,6 +22,8 @@ namespace Discord.API.Rest
         public Optional<ulong?> SystemChannelId { get; set; }
         [JsonProperty("icon")]
         public Optional<Image?> Icon { get; set; }
+        [JsonProperty("banner")]
+        public Optional<Image?> Banner { get; set; }
         [JsonProperty("splash")]
         public Optional<Image?> Splash { get; set; }
         [JsonProperty("afk_channel_id")]
@@ -32,5 +34,7 @@ namespace Discord.API.Rest
         public Optional<ExplicitContentFilterLevel> ExplicitContentFilter { get; set; }
         [JsonProperty("system_channel_flags")]
         public Optional<SystemChannelMessageDeny> SystemChannelFlags { get; set; }
+        [JsonProperty("preferred_locale")]
+        public string PreferredLocale { get; set; }
     }
 }

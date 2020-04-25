@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -84,7 +85,7 @@ namespace Discord.Webhook
         }
         private static API.DiscordRestApiClient CreateApiClient(DiscordRestConfig config)
             => new API.DiscordRestApiClient(config.RestClientProvider, DiscordRestConfig.UserAgent);
-        /// <summary> Sends a message using to the channel for this webhook. </summary>
+        /// <summary> Sends a message to the channel for this webhook. </summary>
         /// <returns> Returns the ID of the created message. </returns>
         public Task<ulong> SendMessageAsync(string text = null, bool isTTS = false, IEnumerable<Embed> embeds = null,
             string username = null, string avatarUrl = null, RequestOptions options = null)
@@ -132,7 +133,7 @@ namespace Discord.Webhook
             {
                 // ensure that the first group is a ulong, set the _webhookId
                 // 0th group is always the entire match, so start at index 1
-                if (!(match.Groups[1].Success && ulong.TryParse(match.Groups[1].Value, out webhookId)))
+                if (!(match.Groups[1].Success && ulong.TryParse(match.Groups[1].Value, NumberStyles.None, CultureInfo.InvariantCulture, out webhookId)))
                     throw ex("The webhook Id could not be parsed.");
 
                 if (!match.Groups[2].Success)

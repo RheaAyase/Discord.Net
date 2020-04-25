@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace Discord
 {
@@ -138,5 +139,116 @@ namespace Discord
         ///     A message's application, if any is associated.
         /// </returns>
         MessageApplication Application { get; }
+
+        /// <summary>
+        ///     Gets the reference to the original message if it was crossposted.
+        /// </summary>
+        /// <remarks>
+        ///     Sent with Cross-posted messages, meaning they were published from news channels
+        ///     and received by subscriber channels.
+        /// </remarks>
+        /// <returns>
+        ///     A message's reference, if any is associated.
+        /// </returns>
+        MessageReference Reference { get; }
+
+        /// <summary>
+        ///     Gets all reactions included in this message.
+        /// </summary>
+        IReadOnlyDictionary<IEmote, ReactionMetadata> Reactions { get; }
+
+        /// <summary>
+        ///     Adds a reaction to this message.
+        /// </summary>
+        /// <example>
+        ///     <para>The following example adds the reaction, <c>💕</c>, to the message.</para>
+        ///     <code language="cs">
+        ///     await msg.AddReactionAsync(new Emoji("\U0001f495"));
+        ///     </code>
+        /// </example>
+        /// <param name="emote">The emoji used to react to this message.</param>
+        /// <param name="options">The options to be used when sending the request.</param>
+        /// <returns>
+        ///     A task that represents the asynchronous operation for adding a reaction to this message.
+        /// </returns>
+        /// <seealso cref="IEmote"/>
+        Task AddReactionAsync(IEmote emote, RequestOptions options = null);
+        /// <summary>
+        ///     Removes a reaction from message.
+        /// </summary>
+        /// <example>
+        ///     <para>The following example removes the reaction, <c>💕</c>, added by the message author from the message.</para>
+        ///     <code language="cs">
+        ///     await msg.RemoveReactionAsync(new Emoji("\U0001f495"), msg.Author);
+        ///     </code>
+        /// </example>
+        /// <param name="emote">The emoji used to react to this message.</param>
+        /// <param name="user">The user that added the emoji.</param>
+        /// <param name="options">The options to be used when sending the request.</param>
+        /// <returns>
+        ///     A task that represents the asynchronous operation for removing a reaction to this message.
+        /// </returns>
+        /// <seealso cref="IEmote"/>
+        Task RemoveReactionAsync(IEmote emote, IUser user, RequestOptions options = null);
+        /// <summary>
+        ///     Removes a reaction from message.
+        /// </summary>
+        /// <example>
+        ///     <para>The following example removes the reaction, <c>💕</c>, added by the user with ID 84291986575613952 from the message.</para>
+        ///     <code language="cs">
+        ///     await msg.RemoveReactionAsync(new Emoji("\U0001f495"), 84291986575613952);
+        ///     </code>
+        /// </example>
+        /// <param name="emote">The emoji used to react to this message.</param>
+        /// <param name="userId">The ID of the user that added the emoji.</param>
+        /// <param name="options">The options to be used when sending the request.</param>
+        /// <returns>
+        ///     A task that represents the asynchronous operation for removing a reaction to this message.
+        /// </returns>
+        /// <seealso cref="IEmote"/>
+        Task RemoveReactionAsync(IEmote emote, ulong userId, RequestOptions options = null);
+        /// <summary>
+        ///     Removes all reactions from this message.
+        /// </summary>
+        /// <param name="options">The options to be used when sending the request.</param>
+        /// <returns>
+        ///     A task that represents the asynchronous removal operation.
+        /// </returns>
+        Task RemoveAllReactionsAsync(RequestOptions options = null);
+
+        /// <summary>
+        ///     Gets all users that reacted to a message with a given emote.
+        /// </summary>
+        /// <remarks>
+        ///     <note type="important">
+        ///         The returned collection is an asynchronous enumerable object; one must call 
+        ///         <see cref="AsyncEnumerableExtensions.FlattenAsync{T}"/> to access the users as a
+        ///         collection.
+        ///     </note>
+        ///     <note type="warning">
+        ///         Do not fetch too many users at once! This may cause unwanted preemptive rate limit or even actual
+        ///         rate limit, causing your bot to freeze!
+        ///     </note>
+        ///     This method will attempt to fetch the number of reactions specified under <paramref name="limit"/>. 
+        ///     The library will attempt to split up the requests according to your <paramref name="limit"/> and 
+        ///     <see cref="DiscordConfig.MaxUserReactionsPerBatch"/>. In other words, should the user request 500 reactions,
+        ///     and the <see cref="Discord.DiscordConfig.MaxUserReactionsPerBatch"/> constant is <c>100</c>, the request will
+        ///     be split into 5 individual requests; thus returning 5 individual asynchronous responses, hence the need
+        ///     of flattening.
+        /// </remarks>
+        /// <example>
+        ///     <para>The following example gets the users that have reacted with the emoji <c>💕</c> to the message.</para>
+        ///     <code language="cs">
+        ///     var emoji = new Emoji("\U0001f495");
+        ///     var reactedUsers = await message.GetReactionUsersAsync(emoji, 100).FlattenAsync();
+        ///     </code>
+        /// </example>
+        /// <param name="emoji">The emoji that represents the reaction that you wish to get.</param>
+        /// <param name="limit">The number of users to request.</param>
+        /// <param name="options">The options to be used when sending the request.</param>
+        /// <returns>
+        ///      Paged collection of users.
+        /// </returns>
+        IAsyncEnumerable<IReadOnlyCollection<IUser>> GetReactionUsersAsync(IEmote emoji, int limit, RequestOptions options = null);
     }
 }

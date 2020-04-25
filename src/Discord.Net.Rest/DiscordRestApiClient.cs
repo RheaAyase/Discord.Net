@@ -45,17 +45,21 @@ namespace Discord.API
         internal string AuthToken { get; private set; }
         internal IRestClient RestClient { get; private set; }
         internal ulong? CurrentUserId { get; set; }
+        public RateLimitPrecision RateLimitPrecision { get; private set; }
+		internal bool UseSystemClock { get; set; }
 
         internal JsonSerializer Serializer => _serializer;
 
         /// <exception cref="ArgumentException">Unknown OAuth token type.</exception>
         public DiscordRestApiClient(RestClientProvider restClientProvider, string userAgent, RetryMode defaultRetryMode = RetryMode.AlwaysRetry,
-            JsonSerializer serializer = null)
+            JsonSerializer serializer = null, RateLimitPrecision rateLimitPrecision = RateLimitPrecision.Second, bool useSystemClock = true)
         {
             _restClientProvider = restClientProvider;
             UserAgent = userAgent;
             DefaultRetryMode = defaultRetryMode;
             _serializer = serializer ?? new JsonSerializer { ContractResolver = new DiscordContractResolver() };
+            RateLimitPrecision = rateLimitPrecision;
+			UseSystemClock = useSystemClock;
 
             RequestQueue = new RequestQueue();
             _stateLock = new SemaphoreSlim(1, 1);
@@ -71,6 +75,7 @@ namespace Discord.API
             RestClient.SetHeader("accept", "*/*");
             RestClient.SetHeader("user-agent", UserAgent);
             RestClient.SetHeader("authorization", GetPrefixedToken(AuthTokenType, AuthToken));
+            RestClient.SetHeader("X-RateLimit-Precision", RateLimitPrecision.ToString().ToLower());
         }
         /// <exception cref="ArgumentException">Unknown OAuth token type.</exception>
         internal static string GetPrefixedToken(TokenType tokenType, string token)
@@ -159,7 +164,7 @@ namespace Discord.API
             try { _loginCancelToken?.Cancel(false); }
             catch { }
 
-            await DisconnectInternalAsync().ConfigureAwait(false);
+            await DisconnectInternalAsync(null).ConfigureAwait(false);
             await RequestQueue.ClearAsync().ConfigureAwait(false);
 
             await RequestQueue.SetCancelTokenAsync(CancellationToken.None).ConfigureAwait(false);
@@ -170,7 +175,7 @@ namespace Discord.API
         }
 
         internal virtual Task ConnectInternalAsync() => Task.Delay(0);
-        internal virtual Task DisconnectInternalAsync() => Task.Delay(0);
+        internal virtual Task DisconnectInternalAsync(Exception ex = null) => Task.Delay(0);
 
         //Core
         internal Task SendAsync(string method, Expression<Func<string>> endpointExpr, BucketIds ids,
@@ -262,6 +267,8 @@ namespace Discord.API
                 CheckState();
             if (request.Options.RetryMode == null)
                 request.Options.RetryMode = DefaultRetryMode;
+			if (request.Options.UseSystemClock == null)
+				request.Options.UseSystemClock = UseSystemClock;
 
             var stopwatch = Stopwatch.StartNew();
             var responseStream = await RequestQueue.SendAsync(request).ConfigureAwait(false);
@@ -1055,7 +1062,7 @@ namespace Discord.API
             {
                 foreach (var roleId in args.RoleIds.Value)
                     Preconditions.NotEqual(roleId, 0, nameof(roleId));
-            }                
+            }
 
             options = RequestOptions.CreateOrClone(options);
 
@@ -1318,11 +1325,25 @@ namespace Discord.API
             var ids = new BucketIds(guildId: guildId);
             Expression<Func<string>> endpoint;
 
+            var queryArgs = new StringBuilder();
             if (args.BeforeEntryId.IsSpecified)
-                endpoint = () => $"guilds/{guildId}/audit-logs?limit={limit}&before={args.BeforeEntryId.Value}";
-            else
-                endpoint = () => $"guilds/{guildId}/audit-logs?limit={limit}";
+            {
+                queryArgs.Append("&before=")
+                    .Append(args.BeforeEntryId);
+            }
+            if (args.UserId.IsSpecified)
+            {
+                queryArgs.Append("&user_id=")
+                    .Append(args.UserId.Value);
+            }
+            if (args.ActionType.IsSpecified)
+            {
+                queryArgs.Append("&action_type=")
+                    .Append(args.ActionType.Value);
+            }
 
+            // still use string interp for the query w/o params, as this is necessary for CreateBucketId
+            endpoint = () => $"guilds/{guildId}/audit-logs?limit={limit}{queryArgs.ToString()}";
             return await SendAsync<AuditLog>("GET", endpoint, ids, options: options).ConfigureAwait(false);
         }
 
@@ -1485,7 +1506,7 @@ namespace Discord.API
                     builder.Append(format, lastIndex, leftIndex - lastIndex);
                     int rightIndex = format.IndexOf("}", leftIndex);
 
-                    int argId = int.Parse(format.Substring(leftIndex + 1, rightIndex - leftIndex - 1));
+                    int argId = int.Parse(format.Substring(leftIndex + 1, rightIndex - leftIndex - 1), NumberStyles.None, CultureInfo.InvariantCulture);
                     string fieldName = GetFieldName(methodArgs[argId + 1]);
 
                     var mappedId = BucketIds.GetIndex(fieldName);

@@ -43,6 +43,7 @@ namespace Discord.WebSocket
         private DateTimeOffset? _statusSince;
         private RestApplication _applicationInfo;
         private bool _isDisposed;
+        private bool _guildSubscriptions;
 
         /// <summary>
         ///     Provides access to a REST-only client with a shared state from this client.
@@ -135,6 +136,7 @@ namespace Discord.WebSocket
             State = new ClientState(0, 0);
             Rest = new DiscordSocketRestClient(config, ApiClient);
             _heartbeatTimes = new ConcurrentQueue<long>();
+            _guildSubscriptions = config.GuildSubscriptions;
 
             _stateLock = new SemaphoreSlim(1, 1);
             _gatewayLogger = LogManager.CreateLogger(ShardId == 0 && TotalShards == 1 ? "Gateway" : $"Shard #{ShardId}");
@@ -177,7 +179,8 @@ namespace Discord.WebSocket
             _largeGuilds = new ConcurrentQueue<ulong>();
         }
         private static API.DiscordSocketApiClient CreateApiClient(DiscordSocketConfig config)
-            => new API.DiscordSocketApiClient(config.RestClientProvider, config.WebSocketProvider, DiscordRestConfig.UserAgent, config.GatewayHost);
+            => new API.DiscordSocketApiClient(config.RestClientProvider, config.WebSocketProvider, DiscordRestConfig.UserAgent, config.GatewayHost,
+                rateLimitPrecision: config.RateLimitPrecision);
         /// <inheritdoc />
         internal override void Dispose(bool disposing)
         {
@@ -240,7 +243,7 @@ namespace Discord.WebSocket
                 else
                 {
                     await _gatewayLogger.DebugAsync("Identifying").ConfigureAwait(false);
-                    await ApiClient.SendIdentifyAsync(shardID: ShardId, totalShards: TotalShards).ConfigureAwait(false);
+                    await ApiClient.SendIdentifyAsync(shardID: ShardId, totalShards: TotalShards, guildSubscriptions: _guildSubscriptions).ConfigureAwait(false);
                 }
 
                 //Wait for READY
@@ -262,7 +265,7 @@ namespace Discord.WebSocket
         {
 
             await _gatewayLogger.DebugAsync("Disconnecting ApiClient").ConfigureAwait(false);
-            await ApiClient.DisconnectAsync().ConfigureAwait(false);
+            await ApiClient.DisconnectAsync(ex).ConfigureAwait(false);
 
             //Wait for tasks to complete
             await _gatewayLogger.DebugAsync("Waiting for heartbeater").ConfigureAwait(false);
@@ -509,7 +512,7 @@ namespace Discord.WebSocket
                     case GatewayOpCode.Reconnect:
                         {
                             await _gatewayLogger.DebugAsync("Received Reconnect").ConfigureAwait(false);
-                            _connection.Error(new Exception("Server requested a reconnect"));
+                            _connection.Error(new GatewayReconnectException("Server requested a reconnect"));
                         }
                         break;
                     case GatewayOpCode.Dispatch:
@@ -1687,7 +1690,7 @@ namespace Discord.WebSocket
                     {
                         if (ConnectionState == ConnectionState.Connected && (_guildDownloadTask?.IsCompleted ?? true))
                         {
-                            _connection.Error(new Exception("Server missed last heartbeat"));
+                            _connection.Error(new GatewayReconnectException("Server missed last heartbeat"));
                             return;
                         }
                     }

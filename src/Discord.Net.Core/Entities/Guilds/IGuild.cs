@@ -1,6 +1,7 @@
 using Discord.Audio;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Threading.Tasks;
 
 namespace Discord
@@ -250,6 +251,24 @@ namespace Discord
         int PremiumSubscriptionCount { get; }
 
         /// <summary>
+        ///     Gets the preferred locale of this guild in IETF BCP 47
+        ///     language tag format.
+        /// </summary>
+        /// <returns>
+        ///     The preferred locale of the guild in IETF BCP 47
+        ///     language tag format.
+        /// </returns>
+        string PreferredLocale { get; }
+
+        /// <summary>
+        ///     Gets the preferred culture of this guild.
+        /// </summary>
+        /// <returns>
+        ///     The preferred culture information of this guild.
+        /// </returns>
+        CultureInfo PreferredCulture { get; }
+
+        /// <summary>
         ///     Modifies this guild.
         /// </summary>
         /// <param name="func">The delegate containing the properties to modify the guild with.</param>
@@ -491,7 +510,7 @@ namespace Discord
         ///     Creates a new text channel in this guild.
         /// </summary>
         /// <example>
-        ///     The following example creates a new text channel under an existing category named <c>Wumpus</c> with a set topic.
+        ///     <para>The following example creates a new text channel under an existing category named <c>Wumpus</c> with a set topic.</para>
         ///     <code language="cs" region="CreateTextChannelAsync"
         ///           source="..\..\..\Discord.Net.Examples\Core\Entities\Guilds\IGuild.Examples.cs"/>
         /// </example>
@@ -579,6 +598,21 @@ namespace Discord
         ///     role.
         /// </returns>
         Task<IRole> CreateRoleAsync(string name, GuildPermissions? permissions = null, Color? color = null, bool isHoisted = false, RequestOptions options = null);
+        // TODO remove CreateRoleAsync overload that does not have isMentionable when breaking change is acceptable
+        /// <summary>
+        ///     Creates a new role with the provided name.
+        /// </summary>
+        /// <param name="name">The new name for the role.</param>
+        /// <param name="permissions">The guild permission that the role should possess.</param>
+        /// <param name="color">The color of the role.</param>
+        /// <param name="isHoisted">Whether the role is separated from others on the sidebar.</param>
+        /// <param name="isMentionable">Whether the role can be mentioned.</param>
+        /// <param name="options">The options to be used when sending the request.</param>
+        /// <returns>
+        ///     A task that represents the asynchronous creation operation. The task result contains the newly created
+        ///     role.
+        /// </returns>
+        Task<IRole> CreateRoleAsync(string name, GuildPermissions? permissions = null, Color? color = null, bool isHoisted = false, bool isMentionable = false, RequestOptions options = null);
 
         /// <summary>
         ///     Adds a user to this guild.
@@ -586,11 +620,11 @@ namespace Discord
         /// <remarks>
         ///     This method requires you have an OAuth2 access token for the user, requested with the guilds.join scope, and that the bot have the MANAGE_INVITES permission in the guild.
         /// </remarks>
-        /// <param name="id">The snowflake identifier of the user.</param>
+        /// <param name="userId">The snowflake identifier of the user.</param>
         /// <param name="accessToken">The OAuth2 access token for the user, requested with the guilds.join scope.</param>
         /// <param name="func">The delegate containing the properties to be applied to the user upon being added to the guild.</param>
         /// <param name="options">The options to be used when sending the request.</param>
-        /// <returns>A guild user associated with the specified <paramref name="id" />; <c>null</c> if the user is already in the guild.</returns>
+        /// <returns>A guild user associated with the specified <paramref name="userId" />; <c>null</c> if the user is already in the guild.</returns>
         Task<IGuildUser> AddGuildUserAsync(ulong userId, string accessToken, Action<AddGuildUserProperties> func = null, RequestOptions options = null);
         /// <summary>
         ///     Gets a collection of all users in this guild.
@@ -680,12 +714,16 @@ namespace Discord
         /// <param name="limit">The number of audit log entries to fetch.</param>
         /// <param name="mode">The <see cref="CacheMode" /> that determines whether the object should be fetched from cache.</param>
         /// <param name="options">The options to be used when sending the request.</param>
+        /// <param name="beforeId">The audit log entry ID to get entries before.</param>
+        /// <param name="actionType">The type of actions to filter.</param>
+        /// <param name="userId">The user ID to filter entries for.</param>
         /// <returns>
         ///     A task that represents the asynchronous get operation. The task result contains a read-only collection
         ///     of the requested audit log entries.
         /// </returns>
         Task<IReadOnlyCollection<IAuditLogEntry>> GetAuditLogsAsync(int limit = DiscordConfig.MaxAuditLogEntriesPerBatch,
-            CacheMode mode = CacheMode.AllowDownload, RequestOptions options = null);
+            CacheMode mode = CacheMode.AllowDownload, RequestOptions options = null, ulong? beforeId = null, ulong? userId = null,
+            ActionType? actionType = null);
 
         /// <summary>
         ///     Gets a webhook found within this guild.
