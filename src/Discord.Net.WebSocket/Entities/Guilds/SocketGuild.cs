@@ -682,10 +682,6 @@ namespace Discord.WebSocket
             return null;
         }
 
-        /// <inheritdoc />
-        public Task<RestRole> CreateRoleAsync(string name, GuildPermissions? permissions = default(GuildPermissions?), Color? color = default(Color?),
-            bool isHoisted = false, RequestOptions options = null)
-            => GuildHelper.CreateRoleAsync(this, Discord, name, permissions, color, isHoisted, false, options);
         /// <summary>
         ///     Creates a new role with the provided name.
         /// </summary>
@@ -1157,9 +1153,6 @@ namespace Discord.WebSocket
         /// <inheritdoc />
         IRole IGuild.GetRole(ulong id)
             => GetRole(id);
-        /// <inheritdoc />
-        async Task<IRole> IGuild.CreateRoleAsync(string name, GuildPermissions? permissions, Color? color, bool isHoisted, RequestOptions options)
-            => await CreateRoleAsync(name, permissions, color, isHoisted, false, options).ConfigureAwait(false);
         /// <inheritdoc />
         async Task<IRole> IGuild.CreateRoleAsync(string name, GuildPermissions? permissions, Color? color, bool isHoisted, bool isMentionable, RequestOptions options)
             => await CreateRoleAsync(name, permissions, color, isHoisted, isMentionable, options).ConfigureAwait(false);

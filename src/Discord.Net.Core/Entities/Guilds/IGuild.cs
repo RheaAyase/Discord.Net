@@ -585,20 +585,7 @@ namespace Discord
         ///     A role that is associated with the specified <paramref name="id"/>; <c>null</c> if none is found.
         /// </returns>
         IRole GetRole(ulong id);
-        /// <summary>
-        ///     Creates a new role with the provided name.
-        /// </summary>
-        /// <param name="name">The new name for the role.</param>
-        /// <param name="permissions">The guild permission that the role should possess.</param>
-        /// <param name="color">The color of the role.</param>
-        /// <param name="isHoisted">Whether the role is separated from others on the sidebar.</param>
-        /// <param name="options">The options to be used when sending the request.</param>
-        /// <returns>
-        ///     A task that represents the asynchronous creation operation. The task result contains the newly created
-        ///     role.
-        /// </returns>
-        Task<IRole> CreateRoleAsync(string name, GuildPermissions? permissions = null, Color? color = null, bool isHoisted = false, RequestOptions options = null);
-        // TODO remove CreateRoleAsync overload that does not have isMentionable when breaking change is acceptable
+
         /// <summary>
         ///     Creates a new role with the provided name.
         /// </summary>

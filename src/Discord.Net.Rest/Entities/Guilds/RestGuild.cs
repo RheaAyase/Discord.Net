@@ -206,7 +206,7 @@ namespace Discord.Rest
                 role?.Update(model);
             }
         }
-        
+
         /// <inheritdoc />
         public Task LeaveAsync(RequestOptions options = null)
             => GuildHelper.LeaveAsync(this, Discord, options);
@@ -838,9 +838,7 @@ namespace Discord.Rest
         /// <inheritdoc />
         IRole IGuild.GetRole(ulong id)
             => GetRole(id);
-        /// <inheritdoc />
-        async Task<IRole> IGuild.CreateRoleAsync(string name, GuildPermissions? permissions, Color? color, bool isHoisted, RequestOptions options)
-            => await CreateRoleAsync(name, permissions, color, isHoisted, false, options).ConfigureAwait(false);
+
         /// <inheritdoc />
         async Task<IRole> IGuild.CreateRoleAsync(string name, GuildPermissions? permissions, Color? color, bool isHoisted, bool isMentionable, RequestOptions options)
             => await CreateRoleAsync(name, permissions, color, isHoisted, isMentionable, options).ConfigureAwait(false);
