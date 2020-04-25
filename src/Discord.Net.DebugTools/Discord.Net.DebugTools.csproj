@@ -4,7 +4,7 @@
     <AssemblyName>Discord.Net.DebugTools</AssemblyName>
     <RootNamespace>Discord</RootNamespace>
     <Description>A Discord.Net extension adding some helper classes for diagnosing issues.</Description>
-    <TargetFrameworks>netstandard1.3</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0</TargetFrameworks>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\Discord.Net.Core\Discord.Net.Core.csproj" />

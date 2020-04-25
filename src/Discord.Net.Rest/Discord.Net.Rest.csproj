@@ -4,7 +4,7 @@
     <AssemblyName>Discord.Net.Rest</AssemblyName>
     <RootNamespace>Discord.Rest</RootNamespace>
     <Description>A core Discord.Net library containing the REST client and models.</Description>
-    <TargetFrameworks>netstandard1.3;netstandard2.0</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0</TargetFrameworks>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\Discord.Net.Core\Discord.Net.Core.csproj" />
