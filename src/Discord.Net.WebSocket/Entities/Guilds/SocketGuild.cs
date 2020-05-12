@@ -626,6 +626,13 @@ namespace Discord.WebSocket
                 return state.RemoveChannel(id) as SocketGuildChannel;
             return null;
         }
+        internal void PurgeChannelCache(ClientState state)
+        {
+            foreach (var channelId in _channels)
+                state.RemoveChannel(channelId);
+
+            _channels.Clear();
+        }
 
         //Voice Regions
         /// <summary>
@@ -795,6 +802,21 @@ namespace Discord.WebSocket
                 return member;
             }
             return null;
+        }
+        internal void PurgeGuildUserCache()
+        {
+            var members = Users;
+            var self = CurrentUser;
+            _members.Clear();
+            _members.TryAdd(self.Id, self);
+
+            DownloadedMemberCount = _members.Count;
+
+            foreach (var member in members)
+            {
+                if (member.Id != self.Id)
+                    member.GlobalUser.RemoveRef(Discord);
+            }
         }
 
         /// <inheritdoc />
