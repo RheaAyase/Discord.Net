@@ -11,6 +11,8 @@ namespace Discord
         private static readonly Lazy<AllowedMentions> none = new Lazy<AllowedMentions>(() => new AllowedMentions());
         private static readonly Lazy<AllowedMentions> all = new Lazy<AllowedMentions>(() =>
             new AllowedMentions(AllowedMentionTypes.Everyone | AllowedMentionTypes.Users | AllowedMentionTypes.Roles));
+        private static readonly Lazy<AllowedMentions> regular = new Lazy<AllowedMentions>(() =>
+            new AllowedMentions(AllowedMentionTypes.Everyone | AllowedMentionTypes.Users));
 
         /// <summary>
         ///     Gets a value which indicates that no mentions in the message content should notify users.
@@ -21,6 +23,11 @@ namespace Discord
         ///     Gets a value which indicates that all mentions in the message content should notify users.
         /// </summary>
         public static AllowedMentions All => all.Value;
+
+        /// <summary>
+        ///     Gets a value which indicates that user and everyone mentions in the message content should notify users.
+        /// </summary>
+        public static AllowedMentions Regular => regular.Value;
 
         /// <summary>
         ///     Gets or sets the type of mentions that will be parsed from the message content.
