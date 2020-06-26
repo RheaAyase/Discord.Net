@@ -745,8 +745,8 @@ namespace Discord.WebSocket
             return null;
         }
         /// <inheritdoc />
-        public Task<int> PruneUsersAsync(int days = 30, bool simulate = false, RequestOptions options = null)
-            => GuildHelper.PruneUsersAsync(this, Discord, days, simulate, options);
+        public Task<int> PruneUsersAsync(int days = 30, bool simulate = false, ulong[] includeRoleIds = null, RequestOptions options = null)
+            => GuildHelper.PruneUsersAsync(this, Discord, days, simulate, includeRoleIds, options);
 
         internal SocketGuildUser AddOrUpdateUser(UserModel model)
         {

@@ -632,8 +632,8 @@ namespace Discord.Rest
         ///     A task that represents the asynchronous prune operation. The task result contains the number of users to
         ///     be or has been removed from this guild.
         /// </returns>
-        public Task<int> PruneUsersAsync(int days = 30, bool simulate = false, RequestOptions options = null)
-            => GuildHelper.PruneUsersAsync(this, Discord, days, simulate, options);
+        public Task<int> PruneUsersAsync(int days = 30, bool simulate = false, ulong[] includeRoleIds = null, RequestOptions options = null)
+            => GuildHelper.PruneUsersAsync(this, Discord, days, simulate, includeRoleIds, options);
 
         //Audit logs
         /// <summary>
