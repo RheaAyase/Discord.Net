@@ -143,7 +143,7 @@ namespace Discord.WebSocket
                 Activity = new MessageActivity()
                 {
                     Type = model.Activity.Value.Type.Value,
-                    PartyId = model.Activity.Value.PartyId.Value
+                    PartyId = model.Activity.Value.PartyId.GetValueOrDefault()
                 };
             }
 
@@ -203,6 +203,10 @@ namespace Discord.WebSocket
         {
             _reactions.Clear();
         }
+        internal void RemoveReactionsForEmote(IEmote emote)
+        {
+            _reactions.RemoveAll(x => x.Emote.Equals(emote));
+        }
 
         /// <inheritdoc />
         public Task AddReactionAsync(IEmote emote, RequestOptions options = null)
@@ -216,6 +220,9 @@ namespace Discord.WebSocket
         /// <inheritdoc />
         public Task RemoveAllReactionsAsync(RequestOptions options = null)
             => MessageHelper.RemoveAllReactionsAsync(this, Discord, options);
+        /// <inheritdoc />
+        public Task RemoveAllReactionsForEmoteAsync(IEmote emote, RequestOptions options = null)
+            => MessageHelper.RemoveAllReactionsForEmoteAsync(this, emote, Discord, options);
         /// <inheritdoc />
         public IAsyncEnumerable<IReadOnlyCollection<IUser>> GetReactionUsersAsync(IEmote emote, int limit, RequestOptions options = null)
             => MessageHelper.GetReactionUsersAsync(this, emote, limit, Discord, options);

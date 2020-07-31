@@ -145,7 +145,16 @@ namespace Discord
                     catch (OperationCanceledException) { }
                 });
 
-                await _connect().ConfigureAwait(false);
+                try
+                {
+                    await _connect().ConfigureAwait(false);
+                }
+                catch (TaskCanceledException ex)
+                {
+                    Exception innerEx = ex.InnerException ?? new OperationCanceledException("Failed to connect.");
+                    Error(innerEx);
+                    throw innerEx;
+                }
 
                 await _logger.InfoAsync("Connected").ConfigureAwait(false);
                 State = ConnectionState.Connected;
