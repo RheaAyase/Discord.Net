@@ -94,10 +94,7 @@ namespace Discord.WebSocket
         /// </returns>
         public async Task<IMessage> GetMessageAsync(ulong id, RequestOptions options = null)
         {
-            IMessage msg = _messages?.Get(id);
-            if (msg == null)
-                msg = await ChannelHelper.GetMessageAsync(this, Discord, id, options).ConfigureAwait(false);
-            return msg;
+            return await (this as IMessageChannel).GetMessageAsync(id, CacheMode.AllowDownload, options);
         }
 
         /// <summary>
@@ -283,10 +280,15 @@ namespace Discord.WebSocket
         /// <inheritdoc />
         async Task<IMessage> IMessageChannel.GetMessageAsync(ulong id, CacheMode mode, RequestOptions options)
         {
-            if (mode == CacheMode.AllowDownload)
-                return await GetMessageAsync(id, options).ConfigureAwait(false);
-            else
-                return GetCachedMessage(id);
+            IMessage msg = GetCachedMessage(id);
+            if ( mode == CacheMode.AllowDownload && msg == null )
+            {
+                msg = await ChannelHelper.GetMessageAsync(this, Discord, id, options).ConfigureAwait(false);
+                if( msg != null )
+                    AddMessage(new SocketUserMessage(this.Discord, msg.Id, this, this.GetUser(msg.Author.Id), msg.Source));
+            }
+
+            return msg;
         }
         /// <inheritdoc />
         IAsyncEnumerable<IReadOnlyCollection<IMessage>> IMessageChannel.GetMessagesAsync(int limit, CacheMode mode, RequestOptions options)
