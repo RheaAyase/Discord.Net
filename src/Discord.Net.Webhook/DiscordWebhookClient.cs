@@ -33,7 +33,7 @@ namespace Discord.Webhook
             : this(webhookUrl, new DiscordRestConfig()) { }
 
         // regex pattern to match webhook urls
-        private static Regex WebhookUrlRegex = new Regex(@"^.*(discord|discordapp)\.com\/api\/webhooks\/([\d]+)\/([a-z0-9_-]+)$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+        private static Regex WebhookUrlRegex = new Regex(@"^.*(discord|discordapp)\.com\/api\/webhooks\/([\d]+)\/([a-z0-9_-]+)$", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
         /// <summary> Creates a new Webhook Discord client. </summary>
         public DiscordWebhookClient(ulong webhookId, string webhookToken, DiscordRestConfig config)
@@ -77,9 +77,9 @@ namespace Discord.Webhook
             ApiClient.RequestQueue.RateLimitTriggered += async (id, info) =>
             {
                 if (info == null)
-                    await _restLogger.VerboseAsync($"Preemptive Rate limit triggered: {id ?? "null"}").ConfigureAwait(false);
+                    await _restLogger.VerboseAsync($"Preemptive Rate limit triggered: {id?.ToString() ?? "null"}").ConfigureAwait(false);
                 else
-                    await _restLogger.WarningAsync($"Rate limit triggered: {id ?? "null"}").ConfigureAwait(false);
+                    await _restLogger.WarningAsync($"Rate limit triggered: {id?.ToString() ?? "null"}").ConfigureAwait(false);
             };
             ApiClient.SentRequest += async (method, endpoint, millis) => await _restLogger.VerboseAsync($"{method} {endpoint}: {millis} ms").ConfigureAwait(false);
         }

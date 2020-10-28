@@ -343,7 +343,7 @@ namespace Discord.WebSocket
             {
                 var user = SocketGlobalUser.Create(this, state, model);
                 user.GlobalUser.AddRef();
-                user.Presence = new SocketPresence(UserStatus.Online, null, null);
+                user.Presence = new SocketPresence(UserStatus.Online, null, null, null);
                 return user;
             });
         }
@@ -371,7 +371,7 @@ namespace Discord.WebSocket
         {
             var cachedGuilds = guilds.ToImmutableArray();
 
-            const short batchSize = 100; //TODO: Gateway Intents will limit to a maximum of 1 guild_id
+            int batchSize = _gatewayIntents.HasValue ? 1 : 100;
             ulong[] batchIds = new ulong[Math.Min(batchSize, cachedGuilds.Length)];
             Task[] batchTasks = new Task[batchIds.Length];
             int batchCount = (cachedGuilds.Length + (batchSize - 1)) / batchSize;
@@ -451,7 +451,7 @@ namespace Discord.WebSocket
                 return;
             var status = Status;
             var statusSince = _statusSince;
-            CurrentUser.Presence = new SocketPresence(status, Activity, null);
+            CurrentUser.Presence = new SocketPresence(status, Activity, null, null);
 
             var gameModel = new GameModel();
             // Discord only accepts rich presence over RPC, don't even bother building a payload
@@ -904,6 +904,13 @@ namespace Discord.WebSocket
 
                                         if (user != null)
                                         {
+                                            var globalBefore = user.GlobalUser.Clone();
+                                            if (user.GlobalUser.Update(State, data.User))
+                                            {
+                                                //Global data was updated, trigger UserUpdated
+                                                await TimedInvokeAsync(_userUpdatedEvent, nameof(UserUpdated), globalBefore, user).ConfigureAwait(false);
+                                            }
+
                                             var before = user.Clone();
                                             user.Update(State, data);
                                             await TimedInvokeAsync(_guildMemberUpdatedEvent, nameof(GuildMemberUpdated), before, user).ConfigureAwait(false);
