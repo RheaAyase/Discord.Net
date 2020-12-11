@@ -17,6 +17,7 @@ namespace Discord.WebSocket
     {
         private bool _isMentioningEveryone, _isTTS, _isPinned, _isSuppressed;
         private long? _editedTimestampTicks;
+        private IUserMessage _referencedMessage;
         private ImmutableArray<Attachment> _attachments = ImmutableArray.Create<Attachment>();
         private ImmutableArray<Embed> _embeds = ImmutableArray.Create<Embed>();
         private ImmutableArray<ITag> _tags = ImmutableArray.Create<ITag>();
@@ -45,6 +46,8 @@ namespace Discord.WebSocket
         public override IReadOnlyCollection<SocketRole> MentionedRoles => _roleMentions;
         /// <inheritdoc />
         public override IReadOnlyCollection<SocketUser> MentionedUsers => _userMentions;
+        /// <inheritdoc />
+        public IUserMessage ReferencedMessage => _referencedMessage;
 
         internal SocketUserMessage(DiscordSocketClient discord, ulong id, ISocketMessageChannel channel, SocketUser author, MessageSource source)
             : base(discord, id, channel, author, source)
@@ -115,11 +118,14 @@ namespace Discord.WebSocket
                     for (int i = 0; i < value.Length; i++)
                     {
                         var val = value[i];
-                        var guildUser = guild.GetUser(val.Id);
-                        if (guildUser != null)
-                            newMentions.Add(guildUser);
-                        else if (val.Object != null)
-                            newMentions.Add(SocketUnknownUser.Create(Discord, state, val.Object));
+                        if (val.Object != null)
+                        {
+                            var user = Channel.GetUserAsync(val.Object.Id, CacheMode.CacheOnly).GetAwaiter().GetResult() as SocketUser;
+                            if (user != null)
+                                newMentions.Add(user);
+                            else
+                                newMentions.Add(SocketUnknownUser.Create(Discord, state, val.Object));
+                        }
                     }
                     _userMentions = newMentions.ToImmutable();
                 }
@@ -130,6 +136,31 @@ namespace Discord.WebSocket
                 var text = model.Content.Value;
                 _tags = MessageHelper.ParseTags(text, Channel, guild, _userMentions);
                 model.Content = text;
+            }
+
+            if (model.ReferencedMessage.IsSpecified && model.ReferencedMessage.Value != null)
+            {
+                var refMsg = model.ReferencedMessage.Value;
+                ulong? webhookId = refMsg.WebhookId.ToNullable();
+                SocketUser refMsgAuthor = null;
+                if (refMsg.Author.IsSpecified)
+                {
+                    if (guild != null)
+                    {
+                        if (webhookId != null)
+                            refMsgAuthor = SocketWebhookUser.Create(guild, state, refMsg.Author.Value, webhookId.Value);
+                        else
+                            refMsgAuthor = guild.GetUser(refMsg.Author.Value.Id);
+                    }
+                    else
+                        refMsgAuthor = (Channel as SocketChannel).GetUser(refMsg.Author.Value.Id);
+                    if (refMsgAuthor == null)
+                        refMsgAuthor = SocketUnknownUser.Create(Discord, state, refMsg.Author.Value);
+                }
+                else
+                    // Message author wasn't specified in the payload, so create a completely anonymous unknown user
+                    refMsgAuthor = new SocketUnknownUser(Discord, id: 0);
+                _referencedMessage = SocketUserMessage.Create(Discord, state, refMsgAuthor, Channel, refMsg);
             }
         }
 
@@ -158,10 +189,10 @@ namespace Discord.WebSocket
             => MentionUtils.Resolve(this, 0, userHandling, channelHandling, roleHandling, everyoneHandling, emojiHandling);
 
         /// <inheritdoc />
-        /// <exception cref="InvalidOperationException">This operation may only be called on a <see cref="SocketNewsChannel"/> channel.</exception>
+        /// <exception cref="InvalidOperationException">This operation may only be called on a <see cref="INewsChannel"/> channel.</exception>
         public async Task CrosspostAsync(RequestOptions options = null)
         {
-            if (!(Channel is SocketNewsChannel))
+            if (!(Channel is INewsChannel))
             {
                 throw new InvalidOperationException("Publishing (crossposting) is only valid in news channels.");
             }

@@ -78,7 +78,7 @@ namespace Discord.Rest
         }
         internal static RestMessage Create(BaseDiscordClient discord, IMessageChannel channel, IUser author, Model model)
         {
-            if (model.Type == MessageType.Default)
+            if (model.Type == MessageType.Default || model.Type == MessageType.Reply)
                 return RestUserMessage.Create(discord, channel, author, model);
             else
                 return RestSystemMessage.Create(discord, channel, author, model);
@@ -120,7 +120,7 @@ namespace Discord.Rest
                 Reference = new MessageReference
                 {
                     GuildId = model.Reference.Value.GuildId,
-                    ChannelId = model.Reference.Value.ChannelId,
+                    InternalChannelId = model.Reference.Value.ChannelId,
                     MessageId = model.Reference.Value.MessageId
                 };
             }

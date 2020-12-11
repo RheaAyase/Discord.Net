@@ -48,6 +48,8 @@ namespace Discord.WebSocket
         /// <inheritdoc />
         public bool IsEmbeddable { get; private set; }
         /// <inheritdoc />
+        public bool IsWidgetEnabled { get; private set; }
+        /// <inheritdoc />
         public VerificationLevel VerificationLevel { get; private set; }
         /// <inheritdoc />
         public MfaLevel MfaLevel { get; private set; }
@@ -83,7 +85,10 @@ namespace Discord.WebSocket
 
         internal ulong? AFKChannelId { get; private set; }
         internal ulong? EmbedChannelId { get; private set; }
+        internal ulong? WidgetChannelId { get; private set; }
         internal ulong? SystemChannelId { get; private set; }
+        internal ulong? RulesChannelId { get; private set; }
+        internal ulong? PublicUpdatesChannelId { get; private set; }
         /// <inheritdoc />
         public ulong OwnerId { get; private set; }
         /// <summary> Gets the user that owns this guild. </summary>
@@ -98,6 +103,8 @@ namespace Discord.WebSocket
         public bool Deleted{ get; set; }
 
         /// <inheritdoc />
+        public string DiscoverySplashId { get; private set; }
+        /// <inheritdoc />
         public PremiumTier PremiumTier { get; private set; }
         /// <inheritdoc />
         public string BannerId { get; private set; }
@@ -111,6 +118,12 @@ namespace Discord.WebSocket
         public int PremiumSubscriptionCount { get; private set; }
         /// <inheritdoc />
         public string PreferredLocale { get; private set; }
+        /// <inheritdoc />
+        public int? MaxPresences { get; private set; }
+        /// <inheritdoc />
+        public int? MaxMembers { get; private set; }
+        /// <inheritdoc />
+        public int? MaxVideoChannelUsers { get; private set; }
 
         /// <inheritdoc />
         public CultureInfo PreferredCulture { get; private set; }
@@ -121,6 +134,8 @@ namespace Discord.WebSocket
         public string IconUrl => CDN.GetGuildIconUrl(Id, IconId);
         /// <inheritdoc />
         public string SplashUrl => CDN.GetGuildSplashUrl(Id, SplashId);
+        /// <inheritdoc />
+        public string DiscoverySplashUrl => CDN.GetGuildDiscoverySplashUrl(Id, DiscoverySplashId);
         /// <inheritdoc />
         public string BannerUrl => CDN.GetGuildBannerUrl(Id, BannerId);
         /// <summary> Indicates whether the client has all the members downloaded to the local guild cache. </summary>
@@ -155,7 +170,7 @@ namespace Discord.WebSocket
         /// </summary>
         /// <returns>
         ///     A <see cref="SocketVoiceChannel" /> that the AFK users will be moved to after they have idled for too
-        ///     long; <c>null</c> if none is set.
+        ///     long; <see langword="null"/> if none is set.
         /// </returns>
         public SocketVoiceChannel AFKChannel
         {
@@ -169,8 +184,9 @@ namespace Discord.WebSocket
         ///     Gets the embed channel (i.e. the channel set in the guild's widget settings) in this guild.
         /// </summary>
         /// <returns>
-        ///     A channel set within the server's widget settings; <c>null</c> if none is set.
+        ///     A channel set within the server's widget settings; <see langword="null"/> if none is set.
         /// </returns>
+        [Obsolete("This property is deprecated, use WidgetChannel instead.")]
         public SocketGuildChannel EmbedChannel
         {
             get
@@ -180,16 +196,60 @@ namespace Discord.WebSocket
             }
         }
         /// <summary>
+        ///     Gets the widget channel (i.e. the channel set in the guild's widget settings) in this guild.
+        /// </summary>
+        /// <returns>
+        ///     A channel set within the server's widget settings; <see langword="null"/> if none is set.
+        /// </returns>
+        public SocketGuildChannel WidgetChannel
+        {
+            get
+            {
+                var id = WidgetChannelId;
+                return id.HasValue ? GetChannel(id.Value) : null;
+            }
+        }
+        /// <summary>
         ///     Gets the system channel where randomized welcome messages are sent in this guild.
         /// </summary>
         /// <returns>
-        ///     A text channel where randomized welcome messages will be sent to; <c>null</c> if none is set.
+        ///     A text channel where randomized welcome messages will be sent to; <see langword="null"/> if none is set.
         /// </returns>
         public SocketTextChannel SystemChannel
         {
             get
             {
                 var id = SystemChannelId;
+                return id.HasValue ? GetTextChannel(id.Value) : null;
+            }
+        }
+        /// <summary>
+        ///     Gets the channel with the guild rules.
+        /// </summary>
+        /// <returns>
+        ///     A text channel with the guild rules; <see langword="null"/> if none is set.
+        /// </returns>
+        public SocketTextChannel RulesChannel
+        {
+            get
+            {
+                var id = RulesChannelId;
+                return id.HasValue ? GetTextChannel(id.Value) : null;
+            }
+        }
+        /// <summary>
+        ///     Gets the channel where admins and moderators of Community guilds receive
+        ///     notices from Discord.
+        /// </summary>
+        /// <returns>
+        ///     A text channel where admins and moderators of Community guilds receive
+        ///     notices from Discord; <see langword="null"/> if none is set.
+        /// </returns>
+        public SocketTextChannel PublicUpdatesChannel
+        {
+            get
+            {
+                var id = PublicUpdatesChannelId;
                 return id.HasValue ? GetTextChannel(id.Value) : null;
             }
         }
@@ -363,15 +423,24 @@ namespace Discord.WebSocket
         internal void Update(ClientState state, Model model)
         {
             AFKChannelId = model.AFKChannelId;
-            EmbedChannelId = model.EmbedChannelId;
+            if (model.EmbedChannelId.IsSpecified)
+                EmbedChannelId = model.EmbedChannelId.Value;
+            if (model.WidgetChannelId.IsSpecified)
+                WidgetChannelId = model.WidgetChannelId.Value;
             SystemChannelId = model.SystemChannelId;
+            RulesChannelId = model.RulesChannelId;
+            PublicUpdatesChannelId = model.PublicUpdatesChannelId;
             AFKTimeout = model.AFKTimeout;
-            IsEmbeddable = model.EmbedEnabled;
+            if (model.EmbedEnabled.IsSpecified)
+                IsEmbeddable = model.EmbedEnabled.Value;
+            if (model.WidgetEnabled.IsSpecified)
+                IsWidgetEnabled = model.WidgetEnabled.Value;
             IconId = model.Icon;
             Name = model.Name;
             OwnerId = model.OwnerId;
             VoiceRegionId = model.Region;
             SplashId = model.Splash;
+            DiscoverySplashId = model.DiscoverySplash;
             VerificationLevel = model.VerificationLevel;
             MfaLevel = model.MfaLevel;
             DefaultMessageNotifications = model.DefaultMessageNotifications;
@@ -383,6 +452,12 @@ namespace Discord.WebSocket
             SystemChannelFlags = model.SystemChannelFlags;
             Description = model.Description;
             PremiumSubscriptionCount = model.PremiumSubscriptionCount.GetValueOrDefault();
+            if (model.MaxPresences.IsSpecified)
+                MaxPresences = model.MaxPresences.Value ?? 25000;
+            if (model.MaxMembers.IsSpecified)
+                MaxMembers = model.MaxMembers.Value;
+            if (model.MaxVideoChannelUsers.IsSpecified)
+                MaxVideoChannelUsers = model.MaxVideoChannelUsers.Value;
             PreferredLocale = model.PreferredLocale;
             PreferredCulture = PreferredLocale == null ? null : new CultureInfo(PreferredLocale);
 
@@ -450,14 +525,19 @@ namespace Discord.WebSocket
             => GuildHelper.DeleteAsync(this, Discord, options);
 
         /// <inheritdoc />
-        /// <exception cref="ArgumentNullException"><paramref name="func"/> is <c>null</c>.</exception>
+        /// <exception cref="ArgumentNullException"><paramref name="func"/> is <see langword="null"/>.</exception>
         public Task ModifyAsync(Action<GuildProperties> func, RequestOptions options = null)
             => GuildHelper.ModifyAsync(this, Discord, func, options);
 
         /// <inheritdoc />
-        /// <exception cref="ArgumentNullException"><paramref name="func"/> is <c>null</c>.</exception>
+        /// <exception cref="ArgumentNullException"><paramref name="func"/> is <see langword="null"/>.</exception>
+        [Obsolete("This endpoint is deprecated, use ModifyWidgetAsync instead.")]
         public Task ModifyEmbedAsync(Action<GuildEmbedProperties> func, RequestOptions options = null)
             => GuildHelper.ModifyEmbedAsync(this, Discord, func, options);
+        /// <inheritdoc />
+        /// <exception cref="ArgumentNullException"><paramref name="func"/> is <see langword="null"/>.</exception>
+        public Task ModifyWidgetAsync(Action<GuildWidgetProperties> func, RequestOptions options = null)
+            => GuildHelper.ModifyWidgetAsync(this, Discord, func, options);
         /// <inheritdoc />
         public Task ReorderChannelsAsync(IEnumerable<ReorderChannelProperties> args, RequestOptions options = null)
             => GuildHelper.ReorderChannelsAsync(this, Discord, args, options);
@@ -488,7 +568,7 @@ namespace Discord.WebSocket
         /// <param name="options">The options to be used when sending the request.</param>
         /// <returns>
         ///     A task that represents the asynchronous get operation. The task result contains a ban object, which
-        ///     contains the user information and the reason for the ban; <c>null</c> if the ban entry cannot be found.
+        ///     contains the user information and the reason for the ban; <see langword="null"/> if the ban entry cannot be found.
         /// </returns>
         public Task<RestBan> GetBanAsync(IUser user, RequestOptions options = null)
             => GuildHelper.GetBanAsync(this, Discord, user.Id, options);
@@ -499,7 +579,7 @@ namespace Discord.WebSocket
         /// <param name="options">The options to be used when sending the request.</param>
         /// <returns>
         ///     A task that represents the asynchronous get operation. The task result contains a ban object, which
-        ///     contains the user information and the reason for the ban; <c>null</c> if the ban entry cannot be found.
+        ///     contains the user information and the reason for the ban; <see langword="null"/> if the ban entry cannot be found.
         /// </returns>
         public Task<RestBan> GetBanAsync(ulong userId, RequestOptions options = null)
             => GuildHelper.GetBanAsync(this, Discord, userId, options);
@@ -524,7 +604,7 @@ namespace Discord.WebSocket
         /// </summary>
         /// <param name="id">The snowflake identifier for the channel.</param>
         /// <returns>
-        ///     A generic channel associated with the specified <paramref name="id" />; <c>null</c> if none is found.
+        ///     A generic channel associated with the specified <paramref name="id" />; <see langword="null"/> if none is found.
         /// </returns>
         public SocketGuildChannel GetChannel(ulong id)
         {
@@ -538,7 +618,7 @@ namespace Discord.WebSocket
         /// </summary>
         /// <param name="id">The snowflake identifier for the text channel.</param>
         /// <returns>
-        ///     A text channel associated with the specified <paramref name="id" />; <c>null</c> if none is found.
+        ///     A text channel associated with the specified <paramref name="id" />; <see langword="null"/> if none is found.
         /// </returns>
         public SocketTextChannel GetTextChannel(ulong id)
             => GetChannel(id) as SocketTextChannel;
@@ -547,7 +627,7 @@ namespace Discord.WebSocket
         /// </summary>
         /// <param name="id">The snowflake identifier for the voice channel.</param>
         /// <returns>
-        ///     A voice channel associated with the specified <paramref name="id" />; <c>null</c> if none is found.
+        ///     A voice channel associated with the specified <paramref name="id" />; <see langword="null"/> if none is found.
         /// </returns>
         public SocketVoiceChannel GetVoiceChannel(ulong id)
             => GetChannel(id) as SocketVoiceChannel;
@@ -556,7 +636,7 @@ namespace Discord.WebSocket
         /// </summary>
         /// <param name="id">The snowflake identifier for the category channel.</param>
         /// <returns>
-        ///     A category channel associated with the specified <paramref name="id" />; <c>null</c> if none is found.
+        ///     A category channel associated with the specified <paramref name="id" />; <see langword="null"/> if none is found.
         /// </returns>
         public SocketCategoryChannel GetCategoryChannel(ulong id)
             => GetChannel(id) as SocketCategoryChannel;
@@ -592,7 +672,7 @@ namespace Discord.WebSocket
         /// <param name="name">The new name for the voice channel.</param>
         /// <param name="func">The delegate containing the properties to be applied to the channel upon its creation.</param>
         /// <param name="options">The options to be used when sending the request.</param>
-        /// <exception cref="ArgumentNullException"><paramref name="name"/> is <c>null</c>.</exception>
+        /// <exception cref="ArgumentNullException"><paramref name="name"/> is <see langword="null"/>.</exception>
         /// <returns>
         ///     A task that represents the asynchronous creation operation. The task result contains the newly created
         ///     voice channel.
@@ -605,7 +685,7 @@ namespace Discord.WebSocket
         /// <param name="name">The new name for the category.</param>
         /// <param name="func">The delegate containing the properties to be applied to the channel upon its creation.</param>
         /// <param name="options">The options to be used when sending the request.</param>
-        /// <exception cref="ArgumentNullException"><paramref name="name"/> is <c>null</c>.</exception>
+        /// <exception cref="ArgumentNullException"><paramref name="name"/> is <see langword="null"/>.</exception>
         /// <returns>
         ///     A task that represents the asynchronous creation operation. The task result contains the newly created
         ///     category channel.
@@ -669,7 +749,7 @@ namespace Discord.WebSocket
         /// <param name="options">The options to be used when sending the request.</param>
         /// <returns>
         ///     A task that represents the asynchronous get operation. The task result contains the partial metadata of
-        ///     the vanity invite found within this guild; <c>null</c> if none is found.
+        ///     the vanity invite found within this guild; <see langword="null"/> if none is found.
         /// </returns>
         public Task<RestInviteMetadata> GetVanityInviteAsync(RequestOptions options = null)
             => GuildHelper.GetVanityInviteAsync(this, Discord, options);
@@ -680,7 +760,7 @@ namespace Discord.WebSocket
         /// </summary>
         /// <param name="id">The snowflake identifier for the role.</param>
         /// <returns>
-        ///     A role that is associated with the specified <paramref name="id"/>; <c>null</c> if none is found.
+        ///     A role that is associated with the specified <paramref name="id"/>; <see langword="null"/> if none is found.
         /// </returns>
         public SocketRole GetRole(ulong id)
         {
@@ -698,7 +778,7 @@ namespace Discord.WebSocket
         /// <param name="isHoisted">Whether the role is separated from others on the sidebar.</param>
         /// <param name="isMentionable">Whether the role can be mentioned.</param>
         /// <param name="options">The options to be used when sending the request.</param>
-        /// <exception cref="ArgumentNullException"><paramref name="name"/> is <c>null</c>.</exception>
+        /// <exception cref="ArgumentNullException"><paramref name="name"/> is <see langword="null"/>.</exception>
         /// <returns>
         ///     A task that represents the asynchronous creation operation. The task result contains the newly created
         ///     role.
@@ -730,13 +810,13 @@ namespace Discord.WebSocket
         /// <remarks>
         ///     This method retrieves a user found within this guild.
         ///     <note>
-        ///         This may return <c>null</c> in the WebSocket implementation due to incomplete user collection in
+        ///         This may return <see langword="null"/> in the WebSocket implementation due to incomplete user collection in
         ///         large guilds.
         ///     </note>
         /// </remarks>
         /// <param name="id">The snowflake identifier of the user.</param>
         /// <returns>
-        ///     A guild user associated with the specified <paramref name="id"/>; <c>null</c> if none is found.
+        ///     A guild user associated with the specified <paramref name="id"/>; <see langword="null"/> if none is found.
         /// </returns>
         public SocketGuildUser GetUser(ulong id)
         {
@@ -745,8 +825,8 @@ namespace Discord.WebSocket
             return null;
         }
         /// <inheritdoc />
-        public Task<int> PruneUsersAsync(int days = 30, bool simulate = false, ulong[] includeRoleIds = null, RequestOptions options = null)
-            => GuildHelper.PruneUsersAsync(this, Discord, days, simulate, includeRoleIds, options);
+        public Task<int> PruneUsersAsync(int days = 30, bool simulate = false, RequestOptions options = null, IEnumerable<ulong> includeRoleIds = null)
+            => GuildHelper.PruneUsersAsync(this, Discord, days, simulate, options, includeRoleIds);
 
         internal SocketGuildUser AddOrUpdateUser(UserModel model)
         {
@@ -890,7 +970,7 @@ namespace Discord.WebSocket
         /// <param name="options">The options to be used when sending the request.</param>
         /// <returns>
         ///     A task that represents the asynchronous get operation. The task result contains the webhook with the
-        ///     specified <paramref name="id"/>; <c>null</c> if none is found.
+        ///     specified <paramref name="id"/>; <see langword="null"/> if none is found.
         /// </returns>
         public Task<RestWebhook> GetWebhookAsync(ulong id, RequestOptions options = null)
             => GuildHelper.GetWebhookAsync(this, Discord, id, options);
@@ -913,7 +993,7 @@ namespace Discord.WebSocket
         public Task<GuildEmote> CreateEmoteAsync(string name, Image image, Optional<IEnumerable<IRole>> roles = default(Optional<IEnumerable<IRole>>), RequestOptions options = null)
             => GuildHelper.CreateEmoteAsync(this, Discord, name, image, roles, options);
         /// <inheritdoc />
-        /// <exception cref="ArgumentNullException"><paramref name="func"/> is <c>null</c>.</exception>
+        /// <exception cref="ArgumentNullException"><paramref name="func"/> is <see langword="null"/>.</exception>
         public Task<GuildEmote> ModifyEmoteAsync(GuildEmote emote, Action<EmoteProperties> func, RequestOptions options = null)
             => GuildHelper.ModifyEmoteAsync(this, Discord, emote.Id, func, options);
         /// <inheritdoc />
@@ -1132,11 +1212,21 @@ namespace Discord.WebSocket
         /// <inheritdoc />
         ulong? IGuild.EmbedChannelId => EmbedChannelId;
         /// <inheritdoc />
+        ulong? IGuild.WidgetChannelId => WidgetChannelId;
+        /// <inheritdoc />
         ulong? IGuild.SystemChannelId => SystemChannelId;
+        /// <inheritdoc />
+        ulong? IGuild.RulesChannelId => RulesChannelId;
+        /// <inheritdoc />
+        ulong? IGuild.PublicUpdatesChannelId => PublicUpdatesChannelId;
         /// <inheritdoc />
         IRole IGuild.EveryoneRole => EveryoneRole;
         /// <inheritdoc />
         IReadOnlyCollection<IRole> IGuild.Roles => Roles;
+        /// <inheritdoc />
+        int? IGuild.ApproximateMemberCount => null;
+        /// <inheritdoc />
+        int? IGuild.ApproximatePresenceCount => null;
 
         /// <inheritdoc />
         async Task<IReadOnlyCollection<IBan>> IGuild.GetBansAsync(RequestOptions options)
@@ -1176,11 +1266,21 @@ namespace Discord.WebSocket
         Task<ITextChannel> IGuild.GetDefaultChannelAsync(CacheMode mode, RequestOptions options)
             => Task.FromResult<ITextChannel>(DefaultChannel);
         /// <inheritdoc />
+        [Obsolete("This method is deprecated, use GetWidgetChannelAsync instead.")]
         Task<IGuildChannel> IGuild.GetEmbedChannelAsync(CacheMode mode, RequestOptions options)
             => Task.FromResult<IGuildChannel>(EmbedChannel);
         /// <inheritdoc />
+        Task<IGuildChannel> IGuild.GetWidgetChannelAsync(CacheMode mode, RequestOptions options)
+            => Task.FromResult<IGuildChannel>(WidgetChannel);
+        /// <inheritdoc />
         Task<ITextChannel> IGuild.GetSystemChannelAsync(CacheMode mode, RequestOptions options)
             => Task.FromResult<ITextChannel>(SystemChannel);
+        /// <inheritdoc />
+        Task<ITextChannel> IGuild.GetRulesChannelAsync(CacheMode mode, RequestOptions options)
+            => Task.FromResult<ITextChannel>(RulesChannel);
+        /// <inheritdoc />
+        Task<ITextChannel> IGuild.GetPublicUpdatesChannelAsync(CacheMode mode, RequestOptions options)
+            => Task.FromResult<ITextChannel>(PublicUpdatesChannel);
         /// <inheritdoc />
         async Task<ITextChannel> IGuild.CreateTextChannelAsync(string name, Action<TextChannelProperties> func, RequestOptions options)
             => await CreateTextChannelAsync(name, func, options).ConfigureAwait(false);
