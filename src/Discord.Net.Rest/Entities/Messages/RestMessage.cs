@@ -68,6 +68,8 @@ namespace Discord.Rest
         public MessageApplication Application { get; private set; }
         /// <inheritdoc />
         public MessageReference Reference { get; private set; }
+        /// <inheritdoc />
+        public MessageFlags? Flags { get; private set; }
 
         internal RestMessage(BaseDiscordClient discord, ulong id, IMessageChannel channel, IUser author, MessageSource source)
             : base(discord, id)
@@ -124,6 +126,9 @@ namespace Discord.Rest
                     MessageId = model.Reference.Value.MessageId
                 };
             }
+
+            if (model.Flags.IsSpecified)
+                Flags = model.Flags.Value;
 
             if (model.Reactions.IsSpecified)
             {
