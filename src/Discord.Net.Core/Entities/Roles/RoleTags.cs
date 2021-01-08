@@ -12,7 +12,7 @@ namespace Discord
         ///     A <see langword="ulong"/> if this role belongs to a bot; otherwise
         ///     <see langword="null"/>.
         /// </returns>
-        public ulong? BotId { get; }
+        public ulong? BotId { get; set; }
         /// <summary>
         ///     Gets the identifier of the integration that this role belongs to, if it does.
         /// </summary>
@@ -20,7 +20,7 @@ namespace Discord
         ///     A <see langword="ulong"/> if this role belongs to an integration; otherwise
         ///     <see langword="null"/>.
         /// </returns>
-        public ulong? IntegrationId { get; }
+        public ulong? IntegrationId { get; set; }
         /// <summary>
         ///     Gets if this role is the guild's premium subscriber (booster) role.
         /// </summary>
@@ -28,7 +28,7 @@ namespace Discord
         ///     <see langword="true"/> if this role is the guild's premium subscriber role;
         ///     otherwise <see langword="false"/>.
         /// </returns>
-        public bool IsPremiumSubscriberRole { get; }
+        public bool IsPremiumSubscriberRole { get; set; }
 
         internal RoleTags(ulong? botId, ulong? integrationId, bool isPremiumSubscriber)
         {

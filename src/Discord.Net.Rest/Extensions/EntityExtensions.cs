@@ -36,10 +36,15 @@ namespace Discord.Rest
         }
         public static RoleTags ToEntity(this API.RoleTags model)
         {
-            return new RoleTags(
-                model.BotId.IsSpecified ? model.BotId.Value : null,
-                model.IntegrationId.IsSpecified ? model.IntegrationId.Value : null,
-                model.IsPremiumSubscriber.IsSpecified ? true : false);
+            RoleTags tags = new RoleTags(null, null, false);
+            if( model.BotId.IsSpecified )
+                tags.BotId = model.BotId.Value;
+            if( model.IntegrationId.IsSpecified )
+                tags.IntegrationId = model.IntegrationId.Value;
+            if( model.IsPremiumSubscriber.IsSpecified )
+                tags.IsPremiumSubscriberRole = true;
+
+            return tags;
         }
         public static API.Embed ToModel(this Embed entity)
         {
